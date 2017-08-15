@@ -17,6 +17,7 @@ class RpftiConfig(AppConfig):
         from rpfti.rpfti_telegram.core_addon import core_addon
         from rpfti.rpfti_telegram.whoami import noporn_addon
         from rpfti.rpfti_telegram.stats import stats_addon
+        from rpfti.rpfti_telegram.rss import rss_addon
         from rpfti.models import Bot, TelegramUser, TelegramChat
         from rpfti.models import Message, Like
 
@@ -44,6 +45,7 @@ class RpftiConfig(AppConfig):
         mainbot.insert_addon(core_addon)
         mainbot.insert_addon(noporn_addon)
         mainbot.insert_addon(stats_addon)
+        mainbot.insert_addon(rss_addon)
         mainbot.bind()
 
         ctrl_settings = {}

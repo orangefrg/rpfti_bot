@@ -12,18 +12,13 @@ api_url = "https://www.googleapis.com/urlshortener/v1/url?key={}".format(
     rpfti.shared_config.GOO_GL)
 headers = {'content-type': 'application/json'}
 
-rss_list = ["https://news.yandex.ru/Nizhny_Novgorod/index.rss",
-            "https://news.yandex.ru/Khabarovsk/index.rss",
-            "https://news.yandex.ru/Tomsk/index.rss",
-            "https://news.yandex.ru/Omsk/index.rss",
-            "https://news.yandex.ru/Tajikistan/index.rss",
-            "https://news.yandex.ru/realty.rss",
-            "https://news.yandex.ru/science.rss",
-            "https://news.yandex.ru/crime.rss",
+rss_list = ["https://news.yandex.ru/Tajikistan/index.rss",
             "http://breakingmad.me/ru/rss",
             "http://batenka.ru/rss/",
-            "https://www.zr.ru/rss-yandex/",
-            "http://rublev.com/feed.rss"]
+            "http://orthodoxy.cafe/index.php?PHPSESSID=ssfp967ein7mpt6dklev0ko1b6&action=.xml;board=65;type=rss",
+            "http://orthodoxy.cafe/index.php?PHPSESSID=ssfp967ein7mpt6dklev0ko1b6&action=.xml;board=66;type=rss",
+            "http://ren.tv/export/feed.xml",
+            ]
 
 drama_list = ["https://www.galya.ru/sitemap/rss20export.xml",
               "http://www.woman.ru/forum/rss/"]
@@ -57,9 +52,20 @@ def get_news(cmd, user, chat, message, cmd_args):
         for i in range(3):
             r = feedparser.parse(random.choice(rss_list))
             n = random.choice(r["entries"])
+            print(n)
             slink = make_short(n["link"])
+            title = n["title"]
+            feed_title = r["feed"]["title"]
+            if "published" in n:
+                pubdate = n["published"]
+            elif "pubDate" in n:
+                pubdate = n["pubDate"]
+            elif "updated" in n:
+                pubdate = n["updated"]
+            else:
+                pubdate = "хер его знает, когда"
             out_msg += "---\n{}\n{}\n({}, опубликовано: {})\n".format(
-                n["title"], slink, r["feed"]["title"], n["published"])
+                title, slink, feed_title, pubdate)
         bot.send_message(chat, out_msg, origin_user=user, disable_preview=True)
     except Exception as e:
         print(e)

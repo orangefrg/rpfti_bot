@@ -23,6 +23,9 @@ import telebot
 # Acceptable roles should be explicitly set
 # By default, command is accessible by anyone, excluding banned ones
 
+# How many times to try ot send a message
+GLOBAL_MSG_TRY_LIMIT = 5
+
 
 class BotCore:
 
@@ -147,89 +150,96 @@ class BotCore:
         if not force and not (self.get_activity(chat.telegram_id) and
                               self.get_activity_global()):
             logging.warning(
-                "Trying to send message to an incative chat and/or bot")
+                "Trying to send message to an inactive chat and/or bot")
             return
-        if text is not None:
-            sent = self.bot.send_message(
-                chat.telegram_id, text,
-                disable_web_page_preview=disable_preview,
-                reply_markup=markup,
-                reply_to_message_id=reply_to,
-                disable_notification=mute)
-            self._log_message(sent, origin_user)
-        if "STICKER" in payload:
-            sent = self.bot.send_sticker(chat.telegram_id,
-                                         payload["STICKER"]["id"],
-                                         reply_markup=markup,
-                                         reply_to_message_id=reply_to,
-                                         disable_notification=mute)
-            self._log_message(sent, origin_user)
-        if "AUDIO" in payload:
-            sent = self.bot.send_audio(chat.telegram_id,
-                                       payload["AUDIO"]["file"],
-                                       title=payload["AUDIO"]["title"],
-                                       performer=payload[
-                                           "AUDIO"]["performer"],
-                                       reply_markup=markup,
-                                       reply_to_message_id=reply_to,
-                                       disable_notification=mute)
-            self._log_message(sent, origin_user)
-        if "VOICE" in payload:
-            sent = self.bot.send_voice(chat.telegram_id,
-                                       payload["VOICE"]["file"],
-                                       caption=payload["VOICE"]["title"],
-                                       reply_markup=markup,
-                                       reply_to_message_id=reply_to,
-                                       disable_notification=mute)
-            self._log_message(sent, origin_user)
-        if "PHOTO" in payload:
-            sent = self.bot.send_photo(chat.telegram_id,
-                                       payload["PHOTO"]["file"],
-                                       caption=payload["PHOTO"]["title"],
-                                       reply_markup=markup,
-                                       reply_to_message_id=reply_to,
-                                       disable_notification=mute)
-            self._log_message(sent, origin_user)
-        if "LOCATION" in payload:
-            sent = self.bot.send_location(chat.telegram_id, latitude=payload[
-                "LOCATION"]["lat"],
-                longitude=payload["LOCATION"]["long"],
-                reply_markup=markup,
-                reply_to_message_id=reply_to,
-                disable_notification=mute)
-            self._log_message(sent, origin_user)
-        if "DOCUMENT" in payload:
-            sent = self.bot.send_document(chat.telegram_id,
-                                          payload["DOCUMENT"]["file"],
-                                          caption=payload["DOCUMENT"]["title"],
-                                          reply_markup=markup,
-                                          reply_to_message_id=reply_to,
-                                          disable_notification=mute)
-            self._log_message(sent, origin_user)
-        if "VIDEO" in payload:
-            if payload["VIDEO"]["type"] == "note":
-                sent = self.bot.send_video_note(chat.telegram_id, payload[
-                    "VIDEO"]["file"],
-                    reply_markup=markup,
-                    reply_to_message_id=reply_to,
-                    disable_notification=mute)
-            else:
-                sent = self.bot.send_video(chat.telegram_id,
-                                           payload["VIDEO"]["file"],
-                                           caption=payload["VIDEO"]["title"],
-                                           reply_markup=markup,
-                                           reply_to_message_id=reply_to,
-                                           disable_notification=mute)
-            self._log_message(sent, origin_user)
-        if "CONTACT" in payload:
-            sent = self.bot.send_sticker(chat.telegram_id,
-                                         payload["CONTACT"]["phone"],
-                                         payload["CONTACT"]["first"],
-                                         payload["CONTACT"]["last"],
-                                         reply_markup=markup,
-                                         reply_to_message_id=reply_to,
-                                         disable_notification=mute)
-            self._log_message(sent, origin_user)
+        counter = 0
+        while counter <= GLOBAL_MSG_TRY_LIMIT:
+            try:
+                if text is not None:
+                    sent = self.bot.send_message(
+                        chat.telegram_id, text,
+                        disable_web_page_preview=disable_preview,
+                        reply_markup=markup,
+                        reply_to_message_id=reply_to,
+                        disable_notification=mute)
+                    self._log_message(sent, origin_user)
+                if "STICKER" in payload:
+                    sent = self.bot.send_sticker(chat.telegram_id,
+                                                 payload["STICKER"]["id"],
+                                                 reply_markup=markup,
+                                                 reply_to_message_id=reply_to,
+                                                 disable_notification=mute)
+                    self._log_message(sent, origin_user)
+                if "AUDIO" in payload:
+                    sent = self.bot.send_audio(chat.telegram_id,
+                                               payload["AUDIO"]["file"],
+                                               title=payload["AUDIO"]["title"],
+                                               performer=payload[
+                                                   "AUDIO"]["performer"],
+                                               reply_markup=markup,
+                                               reply_to_message_id=reply_to,
+                                               disable_notification=mute)
+                    self._log_message(sent, origin_user)
+                if "VOICE" in payload:
+                    sent = self.bot.send_voice(chat.telegram_id,
+                                               payload["VOICE"]["file"],
+                                               caption=payload["VOICE"]["title"],
+                                               reply_markup=markup,
+                                               reply_to_message_id=reply_to,
+                                               disable_notification=mute)
+                    self._log_message(sent, origin_user)
+                if "PHOTO" in payload:
+                    sent = self.bot.send_photo(chat.telegram_id,
+                                               payload["PHOTO"]["file"],
+                                               caption=payload["PHOTO"]["title"],
+                                               reply_markup=markup,
+                                               reply_to_message_id=reply_to,
+                                               disable_notification=mute)
+                    self._log_message(sent, origin_user)
+                if "LOCATION" in payload:
+                    sent = self.bot.send_location(chat.telegram_id, latitude=payload[
+                        "LOCATION"]["lat"],
+                        longitude=payload["LOCATION"]["long"],
+                        reply_markup=markup,
+                        reply_to_message_id=reply_to,
+                        disable_notification=mute)
+                    self._log_message(sent, origin_user)
+                if "DOCUMENT" in payload:
+                    sent = self.bot.send_document(chat.telegram_id,
+                                                  payload["DOCUMENT"]["file"],
+                                                  caption=payload["DOCUMENT"]["title"],
+                                                  reply_markup=markup,
+                                                  reply_to_message_id=reply_to,
+                                                  disable_notification=mute)
+                    self._log_message(sent, origin_user)
+                if "VIDEO" in payload:
+                    if payload["VIDEO"]["type"] == "note":
+                        sent = self.bot.send_video_note(chat.telegram_id, payload[
+                            "VIDEO"]["file"],
+                            reply_markup=markup,
+                            reply_to_message_id=reply_to,
+                            disable_notification=mute)
+                    else:
+                        sent = self.bot.send_video(chat.telegram_id,
+                                                   payload["VIDEO"]["file"],
+                                                   caption=payload["VIDEO"]["title"],
+                                                   reply_markup=markup,
+                                                   reply_to_message_id=reply_to,
+                                                   disable_notification=mute)
+                    self._log_message(sent, origin_user)
+                if "CONTACT" in payload:
+                    sent = self.bot.send_sticker(chat.telegram_id,
+                                                 payload["CONTACT"]["phone"],
+                                                 payload["CONTACT"]["first"],
+                                                 payload["CONTACT"]["last"],
+                                                 reply_markup=markup,
+                                                 reply_to_message_id=reply_to,
+                                                 disable_notification=mute)
+                    self._log_message(sent, origin_user)
+                return
+            except Exception as e:
+                print(e)
+                counter += 1
 
     def get_user(self, user):
         try:

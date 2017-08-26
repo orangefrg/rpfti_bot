@@ -1,5 +1,6 @@
 from django.apps import AppConfig
 import rpfti.shared_config
+import uwsgi
 
 mainbot = None
 
@@ -29,6 +30,7 @@ class RpftiConfig(AppConfig):
         main_models["Users"] = TelegramUser
         main_models["Messages"] = Message
         main_models["Likes"] = Like
+        # main_models["Tasks"] = ScheduledTask
 
         settings = {}
         settings["url"] = shared_config.WEBHOOK_URL_BASE + \
@@ -47,6 +49,13 @@ class RpftiConfig(AppConfig):
         mainbot.insert_addon(stats_addon)
         mainbot.insert_addon(rss_addon)
         mainbot.bind()
+        mainbot.declare()
+
+        for k, v in roles.items():
+            if v == "ADMIN":
+                db_chat = mainbot.models["Chats"].objects.get(
+                    bot__name=mainbot.name, user_name=k)
+                mainbot.send_message(db_chat, "Бот перезапущен")
 
         ctrl_settings = {}
         ctrl_settings["url"] = shared_config.WEBHOOK_URL_BASE + \
@@ -58,6 +67,6 @@ class RpftiConfig(AppConfig):
 
         # controlbot = BotCore(main_models, ctrl_settings, roles)
         # controlbot.insert_addon(core_addon)
-        # controlbot.bind()
+        # controlbot.bind()     
 
         print("READY!")

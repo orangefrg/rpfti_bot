@@ -15,9 +15,9 @@ def mon(request):
 def bot(request):
     global mainbot
     if mainbot is None:
-       print("DECLARING")
-       mainbot = get_bot()
-       mainbot.declare()
+        print("DECLARING")
+        mainbot = get_bot()
+        # mainbot.declare()
     json_string = request.body.decode("utf-8")
     update = telebot.types.Update.de_json(json_string)
     mainbot.bot.process_new_updates([update])

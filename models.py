@@ -75,3 +75,12 @@ class Like(models.Model):
     message = models.ForeignKey(Message, on_delete=models.CASCADE)
     liked_by = models.ForeignKey(TelegramUser, on_delete=models.CASCADE)
     date = models.DateTimeField()
+
+
+class ScheduledTask(models.Model):
+    bot = models.ForeignKey(Bot, on_delete=models.CASCADE)
+    chat = models.ForeignKey(TelegramChat, on_delete=models.CASCADE)
+    time = models.DateTimeField()
+    task_id = models.IntegerField()
+    args = models.TextField()
+    set_by = models.ForeignKey(TelegramUser, on_delete=models.CASCADE)

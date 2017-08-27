@@ -28,31 +28,37 @@ def get_statistics(cmd, user, chat, message, cmd_args):
     users = bot.models["Users"]
     messages = bot.models["Messages"]
     likes = bot.models["Likes"]
+    tasks = bot.models["Tasks"]
     out_string = "Полная статистика\n\n"
 
     for b in bots.objects.all():
         totaltime = datetime.datetime.utcnow() - b.start_time.replace(tzinfo=None)
-        out_string += "---Бот {}---\n(запущен {}, работает {})\n\n".format(
+        out_string += "---Бот {}---\n(запущен {}, работает {})\n".format(
             b.name, b.start_time, totaltime)
+        out_string += "ЧАТЫ:\n"
         for c in chats.objects.filter(bot=b):
             if c.chat_type in ["group", "supergroup"]:
-                out_string += "Чат \"{}\"".format(c.title)
+                out_string += "👨‍👩‍👧‍👦 Чат \"{}\"".format(c.title)
             elif c.chat_type == "channel":
-                out_string += "Канал \"{}\"".format(c.title)
+                out_string += "🗣 Канал \"{}\"".format(c.title)
             elif c.chat_type == "private":
-                out_string += "Личные сообщения с {} {} {}".format(
+                out_string += "👨🏻 Личные сообщения с {} {} {}".format(
                     c.first_name, c.user_name, c.last_name)
             else:
                 out_string += "Неизвестный тип диалога: {}".format(
                     c.telegram_id)
             out_string += " (добавлен {})".format(c.init_date)
             if c.is_active:
-                out_string += " и сейчас активен\n\n"
+                out_string += " и сейчас активен,\n|"
             else:
-                out_string += " и сейчас отключен\n"
-            out_string += "Всего {} сообщений\n\n".format(
-                messages.objects.filter(chat=c).count())
-        out_string += "Пользователи:\n"
+                out_string += " и сейчас отключен,\n|"
+            out_string += "|\tвсего {} сообщений\n|\n|".format(
+                messages.objects.filter(chat=c, bot=b).count())
+            for t in tasks.objects.filter(chat=c, bot=b):
+                out_string += "|\t⏰ Задача: аддон {}, команда {}, сработает в {} (уже срабатывала {} раз)\n".format(
+                    t.addon, t.command, t.trigger_time, t.counter)
+            out_string += "---\n"
+        out_string += "\nПользователи:\n"
         for u in users.objects.filter(bot=b):
             out_string += "{} {} {} - {},".format(
                 u.first_name, u.user_name, u.last_name,

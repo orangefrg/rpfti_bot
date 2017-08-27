@@ -1,3 +1,5 @@
+from datetime import timedelta, datetime
+
 class BotCommand:
 
     def __init__(self, command_text, command_function,
@@ -16,8 +18,6 @@ class BotCommand:
 
 # Bot callback class
 # Used to process callbacks (e.g. 'buttons' under bot messages)
-
-
 class BotCallback:
 
     def __init__(self, cb, callback):
@@ -28,22 +28,33 @@ class BotCallback:
     def call(self, db_user, db_chat, cb):
         self.callback(self, db_user, db_chat, cb)
 
+# Bot periodic/scheduled task class
+class BotTask:
+
+    def __init__(self, name, task_function):
+        self.name = name
+        self.task_function = task_function
+
+    def call(self, task, task_model):
+        return self.task_function(self, task, task_model)
+
 
 # Packed bot addon with commands and callbacks
-
-
 class BotAddon:
 
     def __init__(self, name, description, commands=[],
-                 callbacks=[]):
+                 callbacks=[], tasks=[]):
         self.name = name
         self.description = description
         self.commands = commands
         self.callbacks = callbacks
+        self.tasks = tasks
         for c in self.commands:
             c.addon = self
         for c in self.callbacks:
             c.addon = self
+        for t in self.tasks:
+            t.addon = self
 
 
 def start_bot(cmd, user, chat, message, cmd_args):
@@ -111,6 +122,36 @@ def get_help(cmd, user, chat, message, cmd_args):
                      reply_to=message.message_id)
 
 
+def heartbeat_task(task_f, task, task_model):
+    bot = task_f.addon.bot
+    chat = task.chat
+    bot.send_message(chat, "Ping")
+    bot.reset_task(task, delta=timedelta(minutes=1))
+    return True
+
+
+def enable_heartbeat(cmd, user, chat, message, cmd_args):
+    bot = cmd.addon.bot
+    if bot.add_task(datetime.utcnow(), chat, "Main", "heartbeat", "Test heartbeat task - \"Ping\" message every minute",
+                 user):
+        bot.send_message(chat, "Enabled", origin_user=user, reply_to=message.message_id)
+    else:
+        bot.send_message(chat, "Already enabled", origin_user=user, reply_to=message.message_id)
+
+
+def disable_heartbeat(cmd, user, chat, message, cmd_args):
+    bot = cmd.addon.bot
+    bot.delete_task(chat, "Main", "heartbeat")
+    bot.send_message(chat, "Disabled", origin_user=user, reply_to=message.message_id)
+
+
+def disable_tasks(cmd, user, chat, message, cmd_args):
+    bot = cmd.addon.bot
+    bot.delete_task(chat)
+    bot.send_message(chat, "Удалены все задачи", origin_user=user, reply_to=message.message_id)
+
+
+
 cmd_start = BotCommand("start", start_bot,
                        help_text="запустить бота для данного чата")
 cmd_stop = BotCommand("stop", stop_bot,
@@ -123,9 +164,21 @@ cmd_stop_global = BotCommand("stop_g", stop_global,
                              help_text="отключить бота глобально")
 cmd_help = BotCommand("help", get_help,
                       help_text="вывести это сообщение")
+cmd_start_hb = BotCommand("start_hb", enable_heartbeat,
+                              acceptable_roles=["ADMIN"],
+                              help_text="enable heartbeat")
+cmd_stop_hb = BotCommand("stop_hb", disable_heartbeat,
+                              acceptable_roles=["ADMIN"],
+                              help_text="disable heartbeat")
+cmd_clear_tasks = BotCommand("clear_tasks", disable_tasks,
+                              acceptable_roles=["ADMIN"],
+                              help_text="очистить планировщик для данного чата")
+
+tsk_heartbeat = BotTask("heartbeat", heartbeat_task)
 
 
 core_addon = BotAddon("Main", "основное управление ботом",
                       [cmd_start, cmd_stop,
                        cmd_start_global, cmd_stop_global,
-                       cmd_help])
+                       cmd_help, cmd_start_hb, cmd_stop_hb,
+                       cmd_clear_tasks], tasks=[tsk_heartbeat])

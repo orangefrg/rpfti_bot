@@ -20,7 +20,7 @@ class RpftiConfig(AppConfig):
         from rpfti.rpfti_telegram.stats import stats_addon
         from rpfti.rpfti_telegram.rss import rss_addon
         from rpfti.models import Bot, TelegramUser, TelegramChat
-        from rpfti.models import Message, Like
+        from rpfti.models import Message, Like, ScheduledTask
 
         global mainbot
         shared_config = rpfti.shared_config
@@ -30,7 +30,7 @@ class RpftiConfig(AppConfig):
         main_models["Users"] = TelegramUser
         main_models["Messages"] = Message
         main_models["Likes"] = Like
-        # main_models["Tasks"] = ScheduledTask
+        main_models["Tasks"] = ScheduledTask
 
         settings = {}
         settings["url"] = shared_config.WEBHOOK_URL_BASE + \
@@ -50,6 +50,12 @@ class RpftiConfig(AppConfig):
         mainbot.insert_addon(rss_addon)
         mainbot.bind()
         mainbot.declare()
+
+        def check_tasks(signum):
+            mainbot.check_tasks()
+
+        uwsgi.register_signal(99, "", check_tasks)
+        uwsgi.add_timer(99, 10)
 
         for k, v in roles.items():
             if v == "ADMIN":

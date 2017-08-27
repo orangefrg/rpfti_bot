@@ -9,6 +9,7 @@
 import datetime
 import logging
 import telebot
+import json
 
 # Bot command class
 # Contains command text (as typed by user, but without slashes),
@@ -150,7 +151,7 @@ class BotCore:
         if not force and not (self.get_activity(chat.telegram_id) and
                               self.get_activity_global()):
             logging.warning(
-                "Trying to send message to an inactive chat and/or bot")
+                "Trying to send message to an inactive chat or by inactive bot")
             return
         counter = 0
         while counter <= GLOBAL_MSG_TRY_LIMIT:
@@ -286,6 +287,103 @@ class BotCore:
         db_chat = self.get_chat(message.chat)
         return db_chat, db_user
 
+
+    def trigger_task(self, task, task_model):
+        for a in self.addons:
+            if a.name == task.addon:
+                for t in a.tasks:
+                    if t.name == task.command:
+                        # returning False means "delete the task"
+                        # if the task is updated, return True
+                        # WARNING:
+                        # Not updated task with True returned will be triggered
+                        # INFINITELY!
+                        res = t.call(task, task_model)
+                        return res
+        return False
+
+
+    def check_tasks(self):
+        db_tasks = self.models["Tasks"].objects.filter(bot__name=self.name)
+        to_do = []
+        for t in db_tasks:
+            if t.trigger_time.replace(tzinfo=None) <= datetime.datetime.utcnow():
+                to_do.append(t)
+        for t in to_do:
+            if not self.trigger_task(t, self.models["Tasks"]):
+                print("Received false - deleting task")
+                t.delete()
+
+    # Get all tasks of a kind
+    def get_task(self, chat, addon, command):
+        return self.models["Tasks"].objects.filter(bot__name=self.name, chat=chat, addon=addon, command=command)
+
+
+
+    # Current task is deleted after being triggered
+    # Tasks model and current task are passed to function, so that the latter can reset task
+    # By default, only one task of a kind is allowed for a chat
+    # "allow_multiple" argument allows to override this
+    # Otherwise, only the time will be modified
+    def add_task(self, trigger_time, db_chat, addon, command, description, db_user, args={}, allow_multiple=False):
+        if not allow_multiple:
+            test = self.get_task(db_chat, addon, command)
+            if test.count() > 0:
+                task = test.get()
+                task.trigger_time = trigger_time
+                task.time = datetime.datetime.utcnow()
+                task.set_by = db_user
+                task.save()
+                return False
+        task = self.models["Tasks"]()
+        task.bot = self.models["Bots"].objects.get(name=self.name)
+        task.chat = db_chat
+        task.trigger_time = trigger_time
+        task.time = datetime.datetime.utcnow()
+        task.description = description
+        task.args = json.dumps(args)
+        task.set_by = db_user
+        task.addon = addon
+        task.command = command
+        task.counter = 0
+        task.save()
+        return True
+
+
+    # Delete tasks
+    # Currently, most precise filter is "chat + addon + command",
+    # that means all such tasks will be deleted
+    # Addon and command argumets are optional, lack of those will delete all the tasks for current chat
+    def delete_task(self, db_chat, addon=None, command=None):
+        if addon is not None:
+            if command is not None:
+                self.get_task(db_chat, addon, command).delete()
+            else:
+                self.models["Tasks"].objects.filter(bot__name=self.name, chat=db_chat, addon=addon).delete()
+        else:
+            self.models["Tasks"].objects.filter(bot__name=self.name, chat=db_chat).delete()
+
+
+    # Resets task
+    # Period or new time can be provided
+    # If new time provided, it is being checked
+    # Unless it is later, than current time, it will be set 30 seconds after current time
+    # If no new time present, delta is added to initial time
+    # If none present, delta is considered 24 hours
+    def reset_task(self, task, delta=None, new_time=None):
+        if new_time is None:
+            if delta is None:
+                new_time = task.trigger_time + datetime.timedelta(hours=24)
+            else:
+                new_time = task.trigger_time + delta
+        if new_time.replace(tzinfo=None) < datetime.datetime.utcnow():
+            new_time = datetime.datetime.utcnow() + datetime.timedelta(seconds=30)
+        print("Resetting task {} from {} to {}".format(task.command, task.trigger_time, new_time))
+        task.trigger_time = new_time
+        task.counter += 1
+        task.save()
+
+
     def declare(self):
 
         self.declared = True
@@ -304,12 +402,13 @@ class BotCore:
                         "User {} {} ({}) triggered a {} command".format(
                             db_user.first_name, db_user.last_name,
                             db_user.telegram_id, cmd))
+                    args = message.text[ln+1:]
                     break
             command, addon = self.get_command(cmd)
             if command is None:
                 logging.error("{} was triggered but not found".format(cmd))
                 return False
-            command.call(db_user, db_chat, message)
+            command.call(db_user, db_chat, message, args)
             return True
 
         @self.bot.callback_query_handler(func=lambda call: True)

@@ -202,7 +202,30 @@ def clear_liked(cmd, user, chat, message, cmd_args):
     liked = mdl.objects.filter(liked_by=user)
     if len(liked) > 0:
         cnt = liked.delete()[0]
-        out_str = "Удалено {} сообщений".format(cnt)
+        out_str = "Удалены все {} сообщений".format(cnt)
+    else:
+        out_str = "Нечего удалять, эй"
+    bot.send_message(chat, origin_user=user, text=out_str,
+                     reply_to=message.message_id)
+
+
+def delete_liked(cmd, user, chat, message, cmd_args):
+    bot = cmd.addon.bot
+    mdl = bot.models["Likes"]
+    liked = mdl.objects.filter(liked_by=user)
+    number_match = re.search("(\d+)", cmd_args)
+    if len(liked) > 0:
+        if not number_match:
+            out_str = "Не понимаю, какое удалять. Нужно указать номер в явном виде." \
+                      "Например, \"/delete_liked 4\""
+        else:
+            number = int(number_match.group(1))
+            if number in range(1, len(liked)):
+                liked[number - 1].delete()
+                out_str = "Удалено сообщение номер {}".format(number)
+            else:
+                out_str = "Не получится удалить - понравилось всего {} сообщений".format(len(liked))
+
     else:
         out_str = "Нечего удалять, эй"
     bot.send_message(chat, origin_user=user, text=out_str,
@@ -217,11 +240,13 @@ cmd_whoami = BotCommand(
     "whoami", whoami, help_text="познать себя")
 cmd_get_liked = BotCommand(
     "get_liked", get_liked, help_text="получить список понравившегося")
+cmd_delete_liked = BotCommand(
+    "delete_liked", delete_liked, help_text="удалить определённое понравившееся сообщение")
 cmd_clear_liked = BotCommand(
     "clear_liked", clear_liked, help_text="очистить список понравившегося")
 
 cb_like = BotCallback("set_like", like_callback)
 
 noporn_addon = BotAddon("NoPorn", "нет порно!",
-                        [cmd_noporn, cmd_whoami, cmd_clear_liked,
-                         cmd_get_liked], [cb_like])
+                        [cmd_noporn, cmd_whoami, cmd_get_liked, cmd_delete_liked,
+                         cmd_clear_liked], [cb_like])

@@ -147,7 +147,7 @@ class BotCore:
 
     def send_message(self, chat, text=None, origin_user=None, reply_to=None,
                      markup=None, disable_preview=False,
-                     payload={}, force=False, mute=False):
+                     payload={}, force=False, mute=False, parse_mode=None):
         if not force and not (self.get_activity(chat.telegram_id) and
                               self.get_activity_global()):
             logging.warning(
@@ -162,7 +162,8 @@ class BotCore:
                         disable_web_page_preview=disable_preview,
                         reply_markup=markup,
                         reply_to_message_id=reply_to,
-                        disable_notification=mute)
+                        disable_notification=mute,
+                        parse_mode=parse_mode)
                     self._log_message(sent, origin_user)
                 if "STICKER" in payload:
                     sent = self.bot.send_sticker(chat.telegram_id,

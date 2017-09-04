@@ -6,6 +6,7 @@ import random
 import re
 import datetime
 from .core_addon import BotCommand, BotAddon, BotTask
+from .rss_wiki import read_todays_events
 
 rss_art = "https://backend.deviantart.com/rss.xml?q=boost%3Apopular+max_age%3A72h+in%3Aphotography&type=deviation"
 
@@ -49,6 +50,22 @@ def get_drama(cmd, user, chat, message, cmd_args):
         print(e)
         bot.send_message(
             chat, "Не удалось что-то с драмами...", origin_user=user)
+
+
+def get_day(cmd, user, chat, message, cmd_args):
+    bot = cmd.addon.bot
+    try:
+        date_match = re.search("(\d+).(\d+)", cmd_args)
+        if not date_match:
+            out_string = read_todays_events()
+        else:
+            dd = datetime.datetime.utcnow().replace(day=int(date_match.group(1)), month=int(date_match.group(2)))
+            out_string = read_todays_events(dd)
+        bot.send_message(chat, out_string, origin_user=user, parse_mode="HTML")
+    except Exception as e:
+        print(e)
+        bot.send_message(
+            chat, "Не удалось что-то с датами...", origin_user=user)
 
 
 def get_news(cmd, user, chat, message, cmd_args):
@@ -173,6 +190,15 @@ def task_nudes(task_f, task, task_model):
     return True
 
 
+def task_day(task_f, task, task_model):
+    bot = task_f.addon.bot
+    chat = task.chat
+    out_string = read_todays_events()
+    bot.send_message(chat, out_string, parse_mode="HTML")
+    bot.reset_task(task)
+    return True
+
+
 def subscribe(cmd, user, chat, message, cmd_args, command_name, command_description):
     bot = cmd.addon.bot
     time_match = re.search("(\d+):(\d+)", cmd_args)
@@ -208,11 +234,15 @@ def subscribe_art(cmd, user, chat, message, cmd_args):
 def subscribe_nudes(cmd, user, chat, message, cmd_args):
     subscribe(cmd, user, chat, message, cmd_args, "nudes", "Три картинки ню с DeviantArt")
 
+def subscribe_day(cmd, user, chat, message, cmd_args):
+    subscribe(cmd, user, chat, message, cmd_args, "history_today", "Этот день в истории")
 
 cmd_drama = BotCommand(
     "drama", get_drama, help_text="случайная драма про женскую долю")
 cmd_news = BotCommand(
     "news", get_news, help_text="три случайных новости")
+cmd_day = BotCommand(
+    "history_today", get_day, help_text="день в истории")
 cmd_art = BotCommand(
     "art", get_art, help_text="популярная картинка с DeviantArt")
 cmd_nudes = BotCommand(
@@ -226,11 +256,20 @@ cmd_subscribe_art = BotCommand(
 
 cmd_subscribe_nudes = BotCommand(
     "subscribe_nudes", subscribe_nudes,
-    help_text="подписка на три картинки с неодетыми людьми каждый день. Время указывается в виде hh:mm в 24-часовом формате по гринвичу. " \
+    help_text="подписка на три картинки с неодетыми людьми с сайта deviantart каждый день. Время указывается в виде hh:mm в 24-часовом формате по гринвичу. " \
     "Например, /subscribe_art 7:15 для картинок в 10:15 по Московскому времени. Если подписка уже активна, она будет изменена или отменена "\
     "(в том случае, если время не указано).")
 
+cmd_subscribe_day = BotCommand(
+    "subscribe_history_today", subscribe_day,
+    help_text="подписка на каждый день в истории по материалам википедии. Время указывается в виде hh:mm в 24-часовом формате по гринвичу. " \
+    "Например, /subscribe_art 7:15 для картинок в 10:15 по Московскому времени. Если подписка уже активна, она будет изменена или отменена "\
+    "(в том случае, если время не указано).")
+
+
 tsk_art = BotTask("art", task_art)
 tsk_nudes = BotTask("nudes", task_nudes)
+tsk_day = BotTask("history_today", task_day)
 rss_addon = BotAddon("RSS", "работа с RSS",
-                     [cmd_news, cmd_art, cmd_nudes, cmd_drama, cmd_subscribe_art, cmd_subscribe_nudes], tasks=[tsk_art, tsk_nudes])
+                     [cmd_news, cmd_day, cmd_art, cmd_nudes, cmd_drama, cmd_subscribe_art,
+                      cmd_subscribe_nudes, cmd_subscribe_day], tasks=[tsk_art, tsk_nudes, tsk_day])

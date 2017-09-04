@@ -7,6 +7,8 @@ import random
 months = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября",
           "декабря"]
 
+annivs = [1000, 500, 250, 100, 50, 5]
+
 def get_events(marker, doc):
     event_tags = []
     catch_tag = False
@@ -15,10 +17,10 @@ def get_events(marker, doc):
             continue
         elif c.tag == "h2" and c.getchildren()[0].text == marker:
             catch_tag = True
-        elif catch_tag:
-            if c.tag == "ul":
-                event_tags = c.getchildren()
-                break
+        elif catch_tag and c.tag == "ul":
+            event_tags.extend(c.getchildren())
+        elif catch_tag and c.tag == "h2":
+            break
 
     out_strings = []
     for t in event_tags:
@@ -26,7 +28,16 @@ def get_events(marker, doc):
         out_string = str(t.text) if t.text is not None else ""
         for chld in t.getchildren():
             if year is None:
-                year = chld.text
+                year_str = chld.text
+                year_m = re.search("(\d+)", year_str)
+                if year_m is None:
+                    break
+                year = year_m.group(0)
+                bc_m = re.search("до", year_str)
+                if bc_m is not None:
+                    year = -int(year)
+                else:
+                    year = int(year)
                 if chld.tail is not None:
                     out_string += str(chld.tail)
                 continue
@@ -35,83 +46,111 @@ def get_events(marker, doc):
                     out_string = ""
                     out_string += str(ic.text) if ic.text is not None else ""
                     for icc in ic.getchildren():
-                        out_string += str(icc.text) + str(icc.tail)
-                    out_strings.append((year, out_string))
+                        if icc.text is not None:
+                            out_string += str(icc.text)
+                        if icc.tail is not None:
+                            out_string += str(icc.tail)
+                    out_string = " — " + out_string
+                    out_strings.append((year, year_str, out_string))
             else:
-                out_string += str(chld.text) + str(chld.tail)
-        out_strings.append((year, out_string))
+                if chld.text is not None:
+                    out_string += str(chld.text)
+                if chld.tail is not None:
+                    out_string += str(chld.tail)
+        if year is not None:
+            out_strings.append((year, year_str, out_string))
     return out_strings
 
 def get_names(doc):
     name_tags = []
     catch_tag = False
     for c in doc.getchildren():
-        if not catch_tag and c.tag != "h3":
+        if not catch_tag and c.tag != "h3" and c.tag != "h2":
             continue
-        elif c.tag == "h3" and c.getchildren()[0].text == "Именины":
+        elif (c.tag == "h3" or c.tag == "h2") and c.getchildren()[0].text == "Именины":
             catch_tag = True
         elif catch_tag:
             if c.tag == "ul":
                 name_tags.extend(c.getchildren())
             elif c.tag in ["h2", "h3"]:
                 break
-    out_strings = []
+    out_string = ""
     for t in name_tags:
-        out_strings.append(t.getchildren()[0].text)
-    return ", ".join(out_strings)
+        if t.text is not None:
+            out_string += t.text
+        for c in t.getchildren():
+            if c.text is not None:
+                out_string += str(c.text)
+            if c.tail is not None:
+                out_string += str(c.tail)
+        out_string += "\n"
+    return out_string
 
-def search_for_anniversaries(array, limit, cur_year):
-    results = []
-    for e in array:
-        if len(results) < limit and len(array) > 0:
-            year_m = re.search("(\d+)", e[0])
-            year = year_m.group(0)
-            bc_m = re.search("до", e[0])
-            if bc_m is not None:
-                passed = cur_year + int(year)
-            else:
-                passed = cur_year - int(year)
-            if (passed >= 100 and passed % 10 == 0) or (passed < 100 and passed % 5 == 0):
-                results.append((e[0], passed, e[1]))
-                array.remove(e)
-        else:
-            break
-    while len(results) < limit and len(array) > 0:
-        e = random.choice(array)
-        year_m = re.search("(\d+)", e[0])
-        year = year_m.group(0)
-        bc_m = re.search("до", e[0])
-        if bc_m is not None:
-            passed = cur_year + int(year)
-        else:
-            passed = cur_year - int(year)
-        results.append((e[0], passed, e[1]))
-        array.remove(e)
-    out_strings = []
-    for r in results:
-        if r[1] % 100 == 1:
-            yr_string = "год"
-        elif r[1] % 10 in [2, 3, 4] and r[1] % 100 not in [12, 13, 14]:
-            yr_string = "года"
-        else:
-            yr_string = "лет"
-        string = "{} {} назад ({}) - {}".format(r[1], yr_string, r[0], r[2])
-        out_strings.append(string)
-    return out_strings
 
-def read_todays_events(date=None, limit=10):
+def sort_by_anniversaries(array, limit, cur_year, anniv_order=0):
+    out_elements = []
+    if anniv_order < len(annivs):
+        for a in array:
+            if limit == 0:
+                break
+            diff = cur_year - a[0]
+            if diff % annivs[anniv_order] == 0:
+                new_elem = a + (diff,)
+                out_elements.append(new_elem)
+                array.remove(a)
+                limit -= 1
+        if limit > 0 and len(array) > 0:
+            out_elements.extend(sort_by_anniversaries(array, limit, cur_year, anniv_order + 1))
+    else:
+        while limit > 0 and len(array) > 0:
+            elem = random.choice(array)
+            diff = cur_year - elem[0]
+            new_elem = elem + (diff,)
+            out_elements.append(new_elem)
+            array.remove(elem)
+            limit -= 1
+    return out_elements
+
+
+def diff_to_string(diff):
+    if diff % 10 in [2, 3, 4] and diff % 100 not in [12, 13, 14]:
+        year_str = "года"
+    elif diff % 10 == 1 and diff % 100 != 11:
+        year_str = "год"
+    else:
+        year_str = "лет"
+    return "{} {} назад".format(diff, year_str)
+
+
+def prepare_string(cur_date, events, born, died, names):
+    out_string = "<b>{} {} в истории</b>\n\n".format(cur_date.day, months[cur_date.month-1])
+    if len(names) > 0:
+        out_string += "<b>Именины</b>:\n"
+        out_string += names
+    if len(born) > 0:
+        out_string += "\n<b>В этот день родились:</b>\n"
+        for e in born:
+            out_string += "{} ({}){}\n".format(diff_to_string(e[3]), e[1], e[2])
+    if len(died) > 0:
+        out_string += "<b>И умерли:</b>\n"
+        for e in died:
+            out_string += "{} ({}){}\n".format(diff_to_string(e[3]), e[1], e[2])
+    if len(events) > 0:
+        out_string += "<b>События в истории:</b>\n"
+        for e in events:
+            out_string += "{} ({}){}\n".format(diff_to_string(e[3]), e[1], e[2])
+    return out_string
+
+
+
+
+def read_todays_events(date=None, limit=5):
     cur = datetime.datetime.utcnow() if date is None else date
     link = "https://ru.wikipedia.org/wiki/{}_{}".format(cur.day, months[cur.month - 1])
     r = requests.get(link)
     doc = html.document_fromstring(r.content.decode("utf-8", "strict")).find_class('mw-parser-output').pop()
     names = get_names(doc)
-    events = search_for_anniversaries(get_events("События", doc), limit, cur.year)
-    born = search_for_anniversaries(get_events("Родились", doc), limit, cur.year)
-    died = search_for_anniversaries(get_events("Скончались", doc), limit, cur.year)
-
-    print(names)
-    print(events)
-    print(born)
-    print(died)
-
-    return(events, born, died, names)
+    events = sorted(sort_by_anniversaries(get_events("События", doc), limit, cur.year), key = lambda elem: elem[0])
+    born = sorted(sort_by_anniversaries(get_events("Родились", doc), limit, cur.year), key = lambda elem: elem[0])
+    died = sorted(sort_by_anniversaries(get_events("Скончались", doc), limit, cur.year), key = lambda elem: elem[0])
+    return prepare_string(cur, events, born, died, names)

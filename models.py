@@ -27,7 +27,6 @@ CONTENT_TYPES = (
     ("CONTACT", "Contact information")
 )
 
-
 class Bot(models.Model):
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(null=True)

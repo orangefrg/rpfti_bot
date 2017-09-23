@@ -13,14 +13,19 @@ def get_events(marker, doc):
     event_tags = []
     catch_tag = False
     for c in doc.getchildren():
-        if not catch_tag and c.tag != "h2":
-            continue
-        elif c.tag == "h2" and c.getchildren()[0].text == marker:
-            catch_tag = True
-        elif catch_tag and c.tag == "ul":
-            event_tags.extend(c.getchildren())
-        elif catch_tag and c.tag == "h2":
-            break
+        if not catch_tag:
+            if c.tag != "h2":
+                continue
+            else:
+                for ch in c.getchildren():
+                    if ch.text == marker:
+                        catch_tag = True
+                        continue
+        else:
+            if c.tag == "ul":
+                event_tags.extend(c.getchildren())
+            elif c.tag == "h2":
+                break
 
     out_strings = []
     for t in event_tags:

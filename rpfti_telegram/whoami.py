@@ -11,6 +11,7 @@ import os
 import re
 import random
 from telebot import types
+from .namez import randname
 import datetime
 
 stckr_np = ["BQADAgADAQIAApkvSwqccXZn3KlM4gI",
@@ -80,21 +81,25 @@ def make_phrase(username):
     outstr = username + ", ты - "
     definitions = []
     for i in range(MAX_PHRASES):
-        key = random.choice(list(big_arr.keys()))
-        selected_words = big_arr[key]
-        noun = random.choice(selected_words)
-        adj = random.choice(words_adj)
-        if key == 'female':
-            adj = re.sub("(\S+)([с|н])ий$", "\g<1>\g<2>яя", adj)
-            adj = re.sub("(\S+)([и|ы|о]й)$", "\g<1>ая", adj)
-            adj = re.sub("(\S+)([н|в])$", "\g<1>\g<2>а", adj)
-            adj = re.sub("(\S+)([ий|ый|ой]ся)$", "\g<1>аяся", adj)
-        elif key == 'indef':
-            adj = re.sub("(\S+)([с|н])ий$", "\g<1>\g<2>ее", adj)
-            adj = re.sub("(\S+)([и|ы|о]й)$", "\g<1>ое", adj)
-            adj = re.sub("(\S+)([н|в])$", "\g<1>\g<2>о", adj)
-            adj = re.sub("(\S+)([ий|ый|ой]ся)$", "\g<1>ееся", adj)
-        definitions.append(re.sub("\n", "", adj + " " + noun))
+        name_or_voc = random.randrange(100)
+        if name_or_voc > 80:
+            definitions.append("чувак с именем " + randname())
+        else:
+            key = random.choice(list(big_arr.keys()))
+            selected_words = big_arr[key]
+            noun = random.choice(selected_words)
+            adj = random.choice(words_adj)
+            if key == 'female':
+                adj = re.sub("(\S+)([с|н])ий$", "\g<1>\g<2>яя", adj)
+                adj = re.sub("(\S+)([и|ы|о]й)$", "\g<1>ая", adj)
+                adj = re.sub("(\S+)([н|в])$", "\g<1>\g<2>а", adj)
+                adj = re.sub("(\S+)([ий|ый|ой]ся)$", "\g<1>аяся", adj)
+            elif key == 'indef':
+                adj = re.sub("(\S+)([с|н])ий$", "\g<1>\g<2>ее", adj)
+                adj = re.sub("(\S+)([и|ы|о]й)$", "\g<1>ое", adj)
+                adj = re.sub("(\S+)([н|в])$", "\g<1>\g<2>о", adj)
+                adj = re.sub("(\S+)([ий|ый|ой]ся)$", "\g<1>ееся", adj)
+            definitions.append(re.sub("\n", "", adj + " " + noun))
     for i in range(len(definitions)):
         if i < len(definitions) - 1:
             definitions[i] += random.choice(separators)

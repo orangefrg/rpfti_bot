@@ -161,6 +161,23 @@ def whoami(cmd, user, chat, message, cmd_args):
     bot.send_message(chat, txt, origin_user=user, markup=apply_like_markup())
 
 
+def dreamteam(cmd, user, chat, message, cmd_args):
+    out_str = "Твоя команда мечты:\n\n"
+    out_str += "Тренер: {}\n".format(randname())
+    out_str += "Вратарь: {}\n".format(randname())
+    out_str += "Защитники: "
+    for i in range(4):
+        out_str += "{}, ".format(randname())
+    out_str += "\nПолузащитники: "
+    for i in range(4):
+        out_str += "{}, ".format(randname())
+    out_str += "\nНападающие: "
+    for i in range(2):
+        out_str += "{}, ".format(randname())
+    bot = cmd.addon.bot
+    bot.send_message(chat, out_str, origin_user=user, markup=apply_like_markup())
+
+
 # Bot like callback
 def like_callback(cmd, user, chat, cb):
     result = like_message(user, cmd.addon.bot, cb.message)
@@ -243,6 +260,8 @@ cmd_noporn = BotCommand(
     "x", antiporn, help_text="скрыть плохую картинку стикерами и сообщениями")
 cmd_whoami = BotCommand(
     "whoami", whoami, help_text="познать себя")
+cmd_dreamteam = BotCommand(
+    "dreamteam", dreamteam, help_text="составить свою команду мечты")
 cmd_get_liked = BotCommand(
     "get_liked", get_liked, help_text="получить список понравившегося")
 cmd_delete_liked = BotCommand(
@@ -253,5 +272,5 @@ cmd_clear_liked = BotCommand(
 cb_like = BotCallback("set_like", like_callback)
 
 noporn_addon = BotAddon("NoPorn", "нет порно!",
-                        [cmd_noporn, cmd_whoami, cmd_get_liked, cmd_delete_liked,
+                        [cmd_noporn, cmd_whoami, cmd_dreamteam, cmd_get_liked, cmd_delete_liked,
                          cmd_clear_liked], [cb_like])

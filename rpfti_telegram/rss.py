@@ -5,6 +5,7 @@ import rpfti.shared_config
 import random
 import re
 import datetime
+import traceback
 from .core_addon import BotCommand, BotAddon, BotTask
 from .rss_wiki import read_todays_events
 
@@ -47,7 +48,7 @@ def get_drama(cmd, user, chat, message, cmd_args):
             n["title"], n["category"], n["description"], n["guid"])
         bot.send_message(chat, out_msg, origin_user=user, disable_preview=True)
     except Exception as e:
-        print(e)
+        traceback.print_exc()
         bot.send_message(
             chat, "Не удалось что-то с драмами...", origin_user=user)
 
@@ -63,7 +64,7 @@ def get_day(cmd, user, chat, message, cmd_args):
             out_string = read_todays_events(dd)
         bot.send_message(chat, out_string, origin_user=user, parse_mode="HTML")
     except Exception as e:
-        print(e)
+        traceback.print_exc()
         bot.send_message(
             chat, "Не удалось что-то с датами...", origin_user=user)
 
@@ -75,7 +76,6 @@ def get_news(cmd, user, chat, message, cmd_args):
         for i in range(3):
             r = feedparser.parse(random.choice(rss_list))
             n = random.choice(r["entries"])
-            print(n)
             slink = make_short(n["link"])
             title = n["title"]
             feed_title = r["feed"]["title"]
@@ -91,7 +91,7 @@ def get_news(cmd, user, chat, message, cmd_args):
                 title, slink, feed_title, pubdate)
         bot.send_message(chat, out_msg, origin_user=user, disable_preview=True)
     except Exception as e:
-        print(e)
+        traceback.print_exc()
         bot.send_message(
             chat, "Не удалось что-то с новостями...", origin_user=user)
 
@@ -136,7 +136,7 @@ def get_art(cmd, user, chat, message, cmd_args):
     except Exception as e:
         bot.send_message(
             chat, "Не удалось что-то с картинками...", origin_user=user)
-        print(e)
+        traceback.print_exc()
 
 
 def get_nudes(cmd, user, chat, message, cmd_args):
@@ -155,7 +155,7 @@ def get_nudes(cmd, user, chat, message, cmd_args):
     except Exception as e:
         bot.send_message(
             chat, "Не удалось что-то с картинками...", origin_user=user)
-        print(e)
+        traceback.print_exc()
 
 
 def task_art(task_f, task, task_model):

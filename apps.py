@@ -1,7 +1,6 @@
 from django.apps import AppConfig
 import rpfti.shared_config
 import uwsgi
-
 mainbot = None
 
 
@@ -73,6 +72,6 @@ class RpftiConfig(AppConfig):
 
         # controlbot = BotCore(main_models, ctrl_settings, roles)
         # controlbot.insert_addon(core_addon)
-        # controlbot.bind()     
+        # controlbot.bind()
 
         print("READY!")

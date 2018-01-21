@@ -1,2 +1,3 @@
 shared_config.py
 .idea
+__pycache__

@@ -11,6 +11,7 @@ import os
 import re
 import random
 from telebot import types
+from .namez import randname
 import datetime
 
 stckr_np = ["BQADAgADAQIAApkvSwqccXZn3KlM4gI",
@@ -80,21 +81,25 @@ def make_phrase(username):
     outstr = username + ", ты - "
     definitions = []
     for i in range(MAX_PHRASES):
-        key = random.choice(list(big_arr.keys()))
-        selected_words = big_arr[key]
-        noun = random.choice(selected_words)
-        adj = random.choice(words_adj)
-        if key == 'female':
-            adj = re.sub("(\S+)([с|н])ий$", "\g<1>\g<2>яя", adj)
-            adj = re.sub("(\S+)([и|ы|о]й)$", "\g<1>ая", adj)
-            adj = re.sub("(\S+)([н|в])$", "\g<1>\g<2>а", adj)
-            adj = re.sub("(\S+)([ий|ый|ой]ся)$", "\g<1>аяся", adj)
-        elif key == 'indef':
-            adj = re.sub("(\S+)([с|н])ий$", "\g<1>\g<2>ее", adj)
-            adj = re.sub("(\S+)([и|ы|о]й)$", "\g<1>ое", adj)
-            adj = re.sub("(\S+)([н|в])$", "\g<1>\g<2>о", adj)
-            adj = re.sub("(\S+)([ий|ый|ой]ся)$", "\g<1>ееся", adj)
-        definitions.append(re.sub("\n", "", adj + " " + noun))
+        name_or_voc = random.randrange(100)
+        if name_or_voc > 80:
+            definitions.append("чувак с именем " + randname())
+        else:
+            key = random.choice(list(big_arr.keys()))
+            selected_words = big_arr[key]
+            noun = random.choice(selected_words)
+            adj = random.choice(words_adj)
+            if key == 'female':
+                adj = re.sub("(\S+)([с|н])ий$", "\g<1>\g<2>яя", adj)
+                adj = re.sub("(\S+)([и|ы|о]й)$", "\g<1>ая", adj)
+                adj = re.sub("(\S+)([н|в])$", "\g<1>\g<2>а", adj)
+                adj = re.sub("(\S+)([ий|ый|ой]ся)$", "\g<1>аяся", adj)
+            elif key == 'indef':
+                adj = re.sub("(\S+)([с|н])ий$", "\g<1>\g<2>ее", adj)
+                adj = re.sub("(\S+)([и|ы|о]й)$", "\g<1>ое", adj)
+                adj = re.sub("(\S+)([н|в])$", "\g<1>\g<2>о", adj)
+                adj = re.sub("(\S+)([ий|ый|ой]ся)$", "\g<1>ееся", adj)
+            definitions.append(re.sub("\n", "", adj + " " + noun))
     for i in range(len(definitions)):
         if i < len(definitions) - 1:
             definitions[i] += random.choice(separators)
@@ -154,6 +159,23 @@ def whoami(cmd, user, chat, message, cmd_args):
     bot = cmd.addon.bot
     txt = make_phrase(user.first_name)
     bot.send_message(chat, txt, origin_user=user, markup=apply_like_markup())
+
+
+def dreamteam(cmd, user, chat, message, cmd_args):
+    out_str = "Твоя команда мечты:\n\n"
+    out_str += "Тренер: {}\n".format(randname())
+    out_str += "Вратарь: {}\n".format(randname())
+    out_str += "Защитники: "
+    for i in range(4):
+        out_str += "{}, ".format(randname())
+    out_str += "\nПолузащитники: "
+    for i in range(4):
+        out_str += "{}, ".format(randname())
+    out_str += "\nНападающие: "
+    for i in range(2):
+        out_str += "{}, ".format(randname())
+    bot = cmd.addon.bot
+    bot.send_message(chat, out_str, origin_user=user, markup=apply_like_markup())
 
 
 # Bot like callback
@@ -238,6 +260,8 @@ cmd_noporn = BotCommand(
     "x", antiporn, help_text="скрыть плохую картинку стикерами и сообщениями")
 cmd_whoami = BotCommand(
     "whoami", whoami, help_text="познать себя")
+cmd_dreamteam = BotCommand(
+    "dreamteam", dreamteam, help_text="составить свою команду мечты")
 cmd_get_liked = BotCommand(
     "get_liked", get_liked, help_text="получить список понравившегося")
 cmd_delete_liked = BotCommand(
@@ -248,5 +272,5 @@ cmd_clear_liked = BotCommand(
 cb_like = BotCallback("set_like", like_callback)
 
 noporn_addon = BotAddon("NoPorn", "нет порно!",
-                        [cmd_noporn, cmd_whoami, cmd_get_liked, cmd_delete_liked,
+                        [cmd_noporn, cmd_whoami, cmd_dreamteam, cmd_get_liked, cmd_delete_liked,
                          cmd_clear_liked], [cb_like])

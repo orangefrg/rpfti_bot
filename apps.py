@@ -8,7 +8,6 @@ def get_bot():
     global mainbot
     return mainbot
 
-
 class RpftiConfig(AppConfig):
     name = 'rpfti'
 

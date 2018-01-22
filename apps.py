@@ -1,8 +1,13 @@
 from django.apps import AppConfig
 import rpfti.shared_config
-import uwsgi
+import importlib
 mainbot = None
 
+# Check if bot is launched under uwsgi
+has_uwsgi = False
+if importlib.util.find_spec("uwsgi") is not None:
+    import uwsgi
+    has_uwsgi = True
 
 def get_bot():
     global mainbot
@@ -52,8 +57,9 @@ class RpftiConfig(AppConfig):
         def check_tasks(signum):
             mainbot.check_tasks()
 
-        uwsgi.register_signal(99, "", check_tasks)
-        uwsgi.add_timer(99, 10)
+        if has_uwsgi:
+            uwsgi.register_signal(99, "", check_tasks)
+            uwsgi.add_timer(99, 10)
 
         for k, v in roles.items():
             if v == "ADMIN":

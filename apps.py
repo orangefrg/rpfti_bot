@@ -1,13 +1,14 @@
 from django.apps import AppConfig
 import rpfti.shared_config
-import importlib
 mainbot = None
 
 # Check if bot is launched under uwsgi
 has_uwsgi = False
-if importlib.util.find_spec("uwsgi") is not None:
+try:
     import uwsgi
     has_uwsgi = True
+except:
+    print("WARNING! No UWSGI found")
 
 def get_bot():
     global mainbot

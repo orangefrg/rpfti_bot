@@ -64,9 +64,10 @@ class RpftiConfig(AppConfig):
 
         for k, v in roles.items():
             if v == "ADMIN":
-                db_chat = mainbot.models["Chats"].objects.get(
-                    bot__name=mainbot.name, user_name=k)
-                mainbot.send_message(db_chat, "Бот перезапущен")
+                if has_uwsgi:
+                    db_chat = mainbot.models["Chats"].objects.get(
+                        bot__name=mainbot.name, user_name=k)
+                    mainbot.send_message(db_chat, "Бот перезапущен")
 
         ctrl_settings = {}
         ctrl_settings["url"] = shared_config.WEBHOOK_URL_BASE + \

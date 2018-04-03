@@ -16,8 +16,11 @@ rss_nudes = "https://backend.deviantart.com/rss.xml?q=boost%3Apopular+max_age%3A
 
 rss_filter = "https://backend.deviantart.com/rss.xml?q=boost%3Apopular+max_age%3A72h%FILTER%&type=deviation"
 
-api_url = "https://www.googleapis.com/urlshortener/v1/url?key={}".format(
+_api_url = "https://www.googleapis.com/urlshortener/v1/url?key={}".format(
     rpfti.shared_config.GOO_GL)
+
+api_url = "https://api-ssl.bitly.com/v3/shorten"
+
 headers = {'content-type': 'application/json'}
 
 rss_list = ["https://news.yandex.ru/Tajikistan/index.rss",
@@ -33,9 +36,9 @@ drama_list = ["https://www.galya.ru/sitemap/rss20export.xml",
 
 
 def make_short(url):
-    payload = {'longUrl': url}
-    r = requests.post(api_url, data=json.dumps(payload), headers=headers)
-    return r.json()["id"]
+    payload = {'longUrl': url, "access_token": rpfti.shared_config.BIT_LY}
+    r = requests.get(api_url, params=payload)
+    return r.json()["data"]["url"]
 
 
 def get_drama(cmd, user, chat, message, cmd_args):

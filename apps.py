@@ -1,13 +1,18 @@
 from django.apps import AppConfig
 import rpfti.shared_config
-import uwsgi
 mainbot = None
 
+# Check if bot is launched under uwsgi
+has_uwsgi = False
+try:
+    import uwsgi
+    has_uwsgi = True
+except:
+    print("WARNING! No UWSGI found")
 
 def get_bot():
     global mainbot
     return mainbot
-
 
 class RpftiConfig(AppConfig):
     name = 'rpfti'
@@ -53,14 +58,16 @@ class RpftiConfig(AppConfig):
         def check_tasks(signum):
             mainbot.check_tasks()
 
-        uwsgi.register_signal(99, "", check_tasks)
-        uwsgi.add_timer(99, 10)
+        if has_uwsgi:
+            uwsgi.register_signal(99, "", check_tasks)
+            uwsgi.add_timer(99, 10)
 
         for k, v in roles.items():
             if v == "ADMIN":
-                db_chat = mainbot.models["Chats"].objects.get(
-                    bot__name=mainbot.name, user_name=k)
-                mainbot.send_message(db_chat, "Бот перезапущен")
+                if has_uwsgi:
+                    db_chat = mainbot.models["Chats"].objects.get(
+                        bot__name=mainbot.name, user_name=k)
+                    mainbot.send_message(db_chat, "Бот перезапущен")
 
         ctrl_settings = {}
         ctrl_settings["url"] = shared_config.WEBHOOK_URL_BASE + \

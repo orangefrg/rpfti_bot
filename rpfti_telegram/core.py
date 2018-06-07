@@ -414,7 +414,6 @@ class BotCore:
 
 
     def declare(self):
-
         self.declared = True
 
         # Receiving commands

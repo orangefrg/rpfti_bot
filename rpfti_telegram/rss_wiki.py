@@ -34,6 +34,8 @@ def get_events(marker, doc):
         for chld in t.getchildren():
             if year is None:
                 year_str = chld.text
+                if year_str is None:
+                    break
                 year_m = re.search("(\d+)", year_str)
                 if year_m is None:
                     break

@@ -150,7 +150,6 @@ class BotCore:
         limit -= 200
         messages = []
         while len(text) > 0:
-            print("Len: {}".format(len(text)))
             if len(text) > limit:
                 split_mark = limit
                 for c in range(limit):
@@ -161,7 +160,6 @@ class BotCore:
             else:
                 split_mark = len(text)
             messages.append(text[:split_mark])
-            print(split_mark)
             text = text[split_mark + 1:]
         message_count = len(messages)
         if message_count > 1:
@@ -186,7 +184,7 @@ class BotCore:
                     msgs = self.trim_message(text)
                     for m in msgs:
                         sent = self.bot.send_message(
-                            chat.telegram_id, text,
+                            chat.telegram_id, m,
                             disable_web_page_preview=disable_preview,
                             reply_markup=markup,
                             reply_to_message_id=reply_to,

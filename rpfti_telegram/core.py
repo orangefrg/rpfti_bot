@@ -145,6 +145,32 @@ class BotCore:
             new_msg.content = "PLAIN"
         new_msg.save()
 
+    def trim_message(self, text, limit=4096):
+        # Cut text for service insertions
+        limit -= 200
+        messages = []
+        while len(text) > 0:
+            print("Len: {}".format(len(text)))
+            if len(text) > limit:
+                split_mark = limit
+                for c in range(limit):
+                    current_position = limit - c
+                    if text[current_position] in [" ", "\n"]:
+                        split_mark = current_position
+                        break
+            else:
+                split_mark = len(text)
+            messages.append(text[:split_mark])
+            print(split_mark)
+            text = text[split_mark + 1:]
+        message_count = len(messages)
+        if message_count > 1:
+            counter = 1
+            for m in messages:
+                m += "\n(часть сообщения {}/{})".format(counter, message_count)
+                counter += 1
+        return messages
+
     def send_message(self, chat, text=None, origin_user=None, reply_to=None,
                      markup=None, disable_preview=False,
                      payload={}, force=False, mute=False, parse_mode=None):
@@ -157,14 +183,16 @@ class BotCore:
         while counter <= GLOBAL_MSG_TRY_LIMIT:
             try:
                 if text is not None:
-                    sent = self.bot.send_message(
-                        chat.telegram_id, text,
-                        disable_web_page_preview=disable_preview,
-                        reply_markup=markup,
-                        reply_to_message_id=reply_to,
-                        disable_notification=mute,
-                        parse_mode=parse_mode)
-                    self._log_message(sent, origin_user)
+                    msgs = self.trim_message(text)
+                    for m in msgs:
+                        sent = self.bot.send_message(
+                            chat.telegram_id, text,
+                            disable_web_page_preview=disable_preview,
+                            reply_markup=markup,
+                            reply_to_message_id=reply_to,
+                            disable_notification=mute,
+                            parse_mode=parse_mode)
+                        self._log_message(sent, origin_user)
                 if "STICKER" in payload:
                     sent = self.bot.send_sticker(chat.telegram_id,
                                                  payload["STICKER"]["id"],

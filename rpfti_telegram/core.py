@@ -10,6 +10,7 @@ import datetime
 import logging
 import telebot
 import json
+import random
 
 # Bot command class
 # Contains command text (as typed by user, but without slashes),
@@ -342,8 +343,8 @@ class BotCore:
                 t.delete()
 
     # Get all tasks of a kind
-    def get_task(self, chat, addon, command):
-        return self.models["Tasks"].objects.filter(bot__name=self.name, chat=chat, addon=addon, command=command)
+    def get_task(self, chat, addon_name, command):
+        return self.models["Tasks"].objects.filter(bot__name=self.name, chat=chat, addon=addon_name, command=command)
 
 
 
@@ -352,9 +353,11 @@ class BotCore:
     # By default, only one task of a kind is allowed for a chat
     # "allow_multiple" argument allows to override this
     # Otherwise, only the time will be modified
-    def add_task(self, trigger_time, db_chat, addon, command, description, db_user, args={}, allow_multiple=False):
+    def add_task(self, trigger_time, db_chat, addon_name, command, description, db_user, args={}, allow_multiple=False, random_reset=False):
+        if not trigger_time:
+            trigger_time = datetime.datetime.utcnow() + datetime.timedelta(seconds=30)
         if not allow_multiple:
-            test = self.get_task(db_chat, addon, command)
+            test = self.get_task(db_chat, addon_name, command)
             if test.count() > 0:
                 task = test.get()
                 task.trigger_time = trigger_time
@@ -365,12 +368,13 @@ class BotCore:
         task = self.models["Tasks"]()
         task.bot = self.models["Bots"].objects.get(name=self.name)
         task.chat = db_chat
+        task.random_time = random_reset
         task.trigger_time = trigger_time
         task.time = datetime.datetime.utcnow()
         task.description = description
         task.args = json.dumps(args)
         task.set_by = db_user
-        task.addon = addon
+        task.addon = addon_name
         task.command = command
         task.counter = 0
         task.save()
@@ -381,12 +385,12 @@ class BotCore:
     # Currently, most precise filter is "chat + addon + command",
     # that means all such tasks will be deleted
     # Addon and command argumets are optional, lack of those will delete all the tasks for current chat
-    def delete_task(self, db_chat, addon=None, command=None):
-        if addon is not None:
+    def delete_task(self, db_chat, addon_name=None, command=None):
+        if addon_name is not None:
             if command is not None:
-                self.get_task(db_chat, addon, command).delete()
+                self.get_task(db_chat, addon_name, command).delete()
             else:
-                self.models["Tasks"].objects.filter(bot__name=self.name, chat=db_chat, addon=addon).delete()
+                self.models["Tasks"].objects.filter(bot__name=self.name, chat=db_chat, addon=addon_name).delete()
         else:
             self.models["Tasks"].objects.filter(bot__name=self.name, chat=db_chat).delete()
 
@@ -401,6 +405,8 @@ class BotCore:
         if new_time is None:
             if delta is None:
                 new_time = task.trigger_time + datetime.timedelta(hours=24)
+                if task.random_time:
+                    new_time = new_time.replace(hour=random.randint(0,24), minute=random.randint(0,59))
             else:
                 new_time = task.trigger_time + delta
         if new_time.replace(tzinfo=None) < datetime.datetime.utcnow():

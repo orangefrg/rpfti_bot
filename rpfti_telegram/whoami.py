@@ -158,7 +158,9 @@ def apply_like_markup(likes=0):
 def whoami(cmd, user, chat, message, cmd_args):
     bot = cmd.addon.bot
     txt = make_phrase(user.first_name)
-    bot.send_message(chat, txt, origin_user=user, markup=apply_like_markup())
+    bot.send_message(chat, txt, origin_user=user,
+                    markup=apply_like_markup(),
+                    reply_to=message.message_id)
 
 
 def dreamteam(cmd, user, chat, message, cmd_args):
@@ -175,7 +177,9 @@ def dreamteam(cmd, user, chat, message, cmd_args):
     for i in range(2):
         out_str += "{}, ".format(randname())
     bot = cmd.addon.bot
-    bot.send_message(chat, out_str, origin_user=user, markup=apply_like_markup())
+    bot.send_message(chat, out_str, origin_user=user,
+                     markup=apply_like_markup(),
+                     reply_to=message.message_id)
 
 
 # Bot like callback

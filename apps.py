@@ -23,8 +23,9 @@ class RpftiConfig(AppConfig):
         from rpfti.rpfti_telegram.whoami import noporn_addon
         from rpfti.rpfti_telegram.stats import stats_addon
         from rpfti.rpfti_telegram.rss import rss_addon
+        from rpfti.rpfti_telegram.tourette import tourette_addon
         from rpfti.models import Bot, TelegramUser, TelegramChat
-        from rpfti.models import Message, Like, ScheduledTask
+        from rpfti.models import Message, Like, ScheduledTask, TouretteUser
 
         global mainbot
         shared_config = rpfti.shared_config
@@ -35,6 +36,7 @@ class RpftiConfig(AppConfig):
         main_models["Messages"] = Message
         main_models["Likes"] = Like
         main_models["Tasks"] = ScheduledTask
+        main_models["TouretteUser"] = TouretteUser
 
         settings = {}
         settings["url"] = shared_config.WEBHOOK_URL_BASE + \
@@ -52,6 +54,7 @@ class RpftiConfig(AppConfig):
         mainbot.insert_addon(noporn_addon)
         mainbot.insert_addon(stats_addon)
         mainbot.insert_addon(rss_addon)
+        mainbot.insert_addon(tourette_addon)
         mainbot.bind()
         mainbot.declare()
 

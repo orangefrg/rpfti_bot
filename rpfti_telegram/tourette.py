@@ -7,11 +7,14 @@ path = os.path.dirname(os.path.abspath(__file__))
 words = []
 
 def _loadwords():
+    words_loaded = []
     with open(path + "/words/tourette") as w:
-        words = w.readlines()
+        words_loaded = w.readlines()
+    return words_loaded
+
 
 def _get_word():
-    return "{}!!!".format(random.choice(words))
+    return "{}!!!".format(random.choice(words).rstrip())
 
 def subscribe(cmd, db_user, db_chat, message, cmd_args):
     bot = cmd.addon.bot
@@ -39,8 +42,8 @@ def tourette_word(task_f, task, task_model):
 
 cmd_subscribe_tourette = BotCommand(
     "tourette", subscribe, help_text="включение режима случайных матюков")
-tsk_tourette = BotTask("tourette", tourette_word)
+tsk_tourette = BotTask("random_tourette", tourette_word)
 tourette_addon = BotAddon("Tourette", "Ругань",
                      [cmd_subscribe_tourette], tasks=[tsk_tourette])
 
-_loadwords()
+words = _loadwords()

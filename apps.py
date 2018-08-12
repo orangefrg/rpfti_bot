@@ -25,6 +25,7 @@ class RpftiConfig(AppConfig):
         from rpfti.rpfti_telegram.rss import rss_addon
         from rpfti.rpfti_telegram.tourette import tourette_addon
         from rpfti.rpfti_telegram.datacon_weather import weather_addon
+        from rpfti.rpfti_telegram.cbrf import cbrf_addon
         from rpfti.models import Bot, TelegramUser, TelegramChat
         from rpfti.models import Message, Like, ScheduledTask, TouretteUser
 
@@ -57,6 +58,7 @@ class RpftiConfig(AppConfig):
         mainbot.insert_addon(rss_addon)
         mainbot.insert_addon(tourette_addon)
         mainbot.insert_addon(weather_addon)
+        mainbot.insert_addon(cbrf_addon)
         mainbot.bind()
         mainbot.declare()
 

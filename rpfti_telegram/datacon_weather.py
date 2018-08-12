@@ -7,6 +7,7 @@ def _read_config():
     url = rpfti.shared_config.DATACON_URL
     datasource_id = rpfti.shared_config.DATACON_DATASOURCE_ID
     tag_name = rpfti.shared_config.DATACON_TAG_NAME
+    print(url, datasource_id, tag_name)
     return url, datasource_id, tag_name
 
 # Tags is a list of dicts with keys "datasource_id" and "name"
@@ -35,8 +36,11 @@ def _parse_temperature_response(response):
             current_reading = tag["readings"][0]
             current_value = current_reading["reading"]
             units = tag["units"]
-            timestamp = datetime.strptime(current_reading["timestamp_receive"])
-            report = "{} - {}{}".format(name, current_value, units)
+            timestamp_str = current_reading["timestamp_receive"]
+            if ":" == timestamp_str[-3:-2]:
+                timestamp_str = timestamp_str[:-3] + timestamp_str[-2:]
+            timestamp = datetime.strptime(current_reading["timestamp_receive"], "%Y-%m-%dT%H:%M:%S.%f%z")
+            report = "{}: {}{}".format(name, current_value, units)
             freshness = (timestamp - datetime.utcnow()).total_seconds()
             if freshness > 3600:
                 report += "\nДанные обновлены более часа назад и являются тухлыми"
@@ -45,19 +49,19 @@ def _parse_temperature_response(response):
                 trend_direction = None
                 day_avg = None
                 for t in current_reading["trends"]:
-                    if t["period"] == 10800:
+                    if t["period_seconds"] == 10800:
                         if t["direction"] != "stable":
-                            trend_value = round(t["slope"] * 3600, 2)
+                            trend_value = abs(round(t["slope"] * 3600, 2))
                             if t["direction"] == "increase":
                                 trend_direction = "Растёт"
                             elif t["direction"] == "decrease":
                                 trend_direction = "Падает"
-                    elif t["period"] == 86400:
+                    elif t["period_seconds"] == 86400:
                         day_avg = round(t["average"]["reading"], 2)
                 if trend_value is not None:
                     report += "\n{} на {}{} в час (за последние 3 часа)".format(trend_direction, trend_value, units)
                 if day_avg is not None:
-                    report += "\nСредняя температура за сутки - {}{}".format(day_avg, units)
+                    report += "\nСреднее значение за сутки: {}{}".format(day_avg, units)
             reports.append(report)
     return reports
 
@@ -73,7 +77,6 @@ def get_weather(cmd, user, chat, message, cmd_args):
             }
         ]
     )
-
     reports = _parse_temperature_response(weather_data)
     for r in reports:
         bot.send_message(chat, r, origin_user=user,

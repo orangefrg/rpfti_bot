@@ -229,7 +229,7 @@ def get_acronym_definition_noun(acronym_part):
     else:
         for gender in big_arr:
             for word in big_arr[gender]:
-                if re.match("{}(.*)".format(acronym_part), word):
+                if re.match("{}(.*)".format(acronym_part), word) and len(word)>1:
                     matching_words.append((word, gender))
         cached_acronyms[acronym_part] = matching_words
     if len(matching_words) == 0:
@@ -246,7 +246,7 @@ def get_acronym_definition_adj(acronym_part, gender):
         matching_words = cached_acronyms_adj[acronym_part]
     else:
         for word in words_adj:
-            if re.match("{}(.*)".format(acronym_part), word):
+            if re.match("{}(.*)".format(acronym_part), word) and len(word)>1:
                 matching_words.append(word)
         cached_acronyms[acronym_part] = matching_words
     if len(matching_words) == 0:

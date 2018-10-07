@@ -98,7 +98,7 @@ names = ["Аарон", "Аббас", "Абд", "Абдуллах", "Абид", "
 endings = ["ев", "ов", "ский", "ской", "едов", "ьев", "ьин", "ин", "ец", "штейн", "сберг", "сбург", "махмудов", "стоун",
            "иец", "аец", "уёк"]
 
-def randname():
+def get_random_name():
     name = random.choice(names)
     fname = random.choice(names) + random.choice(endings)
     return "{} {}".format(name, fname)

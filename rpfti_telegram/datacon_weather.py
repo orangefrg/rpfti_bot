@@ -41,9 +41,9 @@ def _parse_temperature_response(response):
                 timestamp_str = timestamp_str[:-3] + timestamp_str[-2:]
             timestamp = datetime.strptime(current_reading["timestamp_receive"], "%Y-%m-%dT%H:%M:%S.%f%z")
             report = "{}: {}{}".format(name, current_value, units)
-            freshness = (timestamp - datetime.utcnow()).total_seconds()
+            freshness = (datetime.utcnow() - timestamp).total_seconds()
             if freshness > 3600:
-                report += "\nДанные обновлены более часа назад и являются тухлыми"
+                report += "\nДанные обновлены более часа назад и являются тухлыми. Обратитесь к телемастеру."
             else:
                 trend_value = None
                 trend_direction = None

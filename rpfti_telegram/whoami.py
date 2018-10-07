@@ -111,7 +111,7 @@ def get_random_adj(gender):
 def make_phrase(username):
     outstr = username + ", ты - "
     definitions = []
-    for i in range(2):
+    for i in range(MAX_PHRASES):
         name_or_voc = random.randrange(100)
         if name_or_voc > 80:
             definitions.append("чувак с именем " + get_random_name())

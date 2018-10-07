@@ -24,7 +24,7 @@ def _get_currencies(all_results, currencies):
     if ":" == timestamp_str[-3:-2]:
         timestamp_str = timestamp_str[:-3] + timestamp_str[-2:]
     timestamp = datetime.datetime.strptime(timestamp_str, "%Y-%m-%dT%H:%M:%S%z")
-    result_string += "Данные на {}:".format(timestamp.strftime("%m.%d.%Y"))
+    result_string += "Данные на {}:".format(timestamp.strftime("%d.%m.%Y"))
     for curr in currencies:
         code = curr["code"]
         logo = curr["display"]

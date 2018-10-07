@@ -216,7 +216,6 @@ def acronym_preprocessing(acronym):
                     all_upper = True
             elif a not in valid_acronym_banned:
                 acronym_parts.append(a)
-    print(acronym_parts)
     return acronym_parts
 
 
@@ -320,6 +319,7 @@ def translate_acronym_worker(acronym):
         return "Не удалось расшифровать аббревиатуру. Что-то пошло не так."
     acronym_with_dots = ". ".join(acronym_parts) + "."
     out_str = "{} означает:\n\n{}".format(acronym_with_dots, out_str)
+    return out_str
 
 
 def translate_acronym(cmd, user, chat, message, cmd_args):
@@ -328,12 +328,14 @@ def translate_acronym(cmd, user, chat, message, cmd_args):
     txt = ""
     if not arguments_match:
         txt = "Чёт не нашлось аббревиатуры"
+        bot.send_message(chat, txt, origin_user=user,
+                        reply_to=message.message_id)
     else:
         acronym = arguments_match.group(1)
         txt = translate_acronym_worker(acronym)
-    bot.send_message(chat, txt, origin_user=user,
-                    markup=apply_like_markup(),
-                    reply_to=message.message_id)
+        bot.send_message(chat, txt, origin_user=user,
+                        markup=apply_like_markup(),
+                        reply_to=message.message_id)
 
 
 # Bot like callback

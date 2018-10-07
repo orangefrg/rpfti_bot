@@ -6,6 +6,7 @@ class ScheduledTask(models.Model):
     chat = models.ForeignKey(TelegramChat, on_delete=models.CASCADE)
     time = models.DateTimeField()
     trigger_time = models.DateTimeField()
+    random_time = models.BooleanField(default=False)
     description = models.TextField()
     args = models.TextField()
     set_by = models.ForeignKey(TelegramUser, on_delete=models.CASCADE)

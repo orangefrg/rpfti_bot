@@ -7,7 +7,6 @@ def _read_config():
     url = rpfti.shared_config.DATACON_URL
     datasource_id = rpfti.shared_config.DATACON_DATASOURCE_ID
     tag_name = rpfti.shared_config.DATACON_TAG_NAME
-    print(url, datasource_id, tag_name)
     return url, datasource_id, tag_name
 
 # Tags is a list of dicts with keys "datasource_id" and "name"
@@ -39,7 +38,10 @@ def _parse_temperature_response(response):
             timestamp_str = current_reading["timestamp_receive"]
             if ":" == timestamp_str[-3:-2]:
                 timestamp_str = timestamp_str[:-3] + timestamp_str[-2:]
-            timestamp = datetime.strptime(current_reading["timestamp_receive"], "%Y-%m-%dT%H:%M:%S.%f%z")
+            if "Z" == timestamp_str[-1]:
+                timestamp = datetime.strptime(current_reading["timestamp_receive"][:-1], "%Y-%m-%dT%H:%M:%S.%f")
+            else:
+                timestamp = datetime.strptime(current_reading["timestamp_receive"], "%Y-%m-%dT%H:%M:%S.%f%z")
             report = "{}: {}{}".format(name, current_value, units)
             freshness = (datetime.utcnow() - timestamp).total_seconds()
             if freshness > 3600:
@@ -79,6 +81,7 @@ def get_weather(cmd, user, chat, message, cmd_args):
     )
     reports = _parse_temperature_response(weather_data)
     for r in reports:
+        print("SENDING MESSAGE")
         bot.send_message(chat, r, origin_user=user,
                         reply_to=message.message_id)
 

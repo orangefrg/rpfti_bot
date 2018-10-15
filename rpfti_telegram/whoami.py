@@ -264,7 +264,6 @@ def get_acronym_as_motto(acronym_parts):
     for p in acronym_parts:
         matching_words = get_acronym_definition_noun(p)
         part_def = random.choice(matching_words)
-        print(part_def)
         if p is None:
             return None
         definition.append(part_def[0])

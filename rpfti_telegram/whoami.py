@@ -11,8 +11,13 @@ import os
 import re
 import random
 from telebot import types
-from .namez import randname
+from .namez import get_random_name
 import datetime
+valid_acronym_banned = ["Ы", "Ь", "Ъ"]
+
+cached_acronyms = {}
+cached_acronyms_adj = {}
+
 
 stckr_np = ["BQADAgADAQIAApkvSwqccXZn3KlM4gI",
             "BQADAgADHwADpnZvDBxwFN2m2olrAg",
@@ -77,28 +82,42 @@ def loadwords():
                  len(words_indef), len(words_adj)))
 
 
+def gender_change(word, gender):
+    if gender == 'female':
+        word = re.sub("(\S+)([с|н])ий$", "\g<1>\g<2>яя", word)
+        word = re.sub("(\S+)([и|ы|о]й)$", "\g<1>ая", word)
+        word = re.sub("(\S+)([н|в])$", "\g<1>\g<2>а", word)
+        word = re.sub("(\S+)([ий|ый|ой]ся)$", "\g<1>аяся", word)
+    elif gender == 'indef':
+        word = re.sub("(\S+)([с|н])ий$", "\g<1>\g<2>ее", word)
+        word = re.sub("(\S+)([и|ы|о]й)$", "\g<1>ое", word)
+        word = re.sub("(\S+)([н|в])$", "\g<1>\g<2>о", word)
+        word = re.sub("(\S+)([ий|ый|ой]ся)$", "\g<1>ееся", word)
+    return word
+
+
+def get_random_noun():
+    key = random.choice(list(big_arr.keys()))
+    selected_words = big_arr[key]
+    noun = random.choice(selected_words)
+    return key, noun
+
+
+def get_random_adj(gender):
+    adj = gender_change(random.choice(words_adj), gender)
+    return adj
+
+
 def make_phrase(username):
     outstr = username + ", ты - "
     definitions = []
     for i in range(MAX_PHRASES):
         name_or_voc = random.randrange(100)
         if name_or_voc > 80:
-            definitions.append("чувак с именем " + randname())
+            definitions.append("чувак с именем " + get_random_name())
         else:
-            key = random.choice(list(big_arr.keys()))
-            selected_words = big_arr[key]
-            noun = random.choice(selected_words)
-            adj = random.choice(words_adj)
-            if key == 'female':
-                adj = re.sub("(\S+)([с|н])ий$", "\g<1>\g<2>яя", adj)
-                adj = re.sub("(\S+)([и|ы|о]й)$", "\g<1>ая", adj)
-                adj = re.sub("(\S+)([н|в])$", "\g<1>\g<2>а", adj)
-                adj = re.sub("(\S+)([ий|ый|ой]ся)$", "\g<1>аяся", adj)
-            elif key == 'indef':
-                adj = re.sub("(\S+)([с|н])ий$", "\g<1>\g<2>ее", adj)
-                adj = re.sub("(\S+)([и|ы|о]й)$", "\g<1>ое", adj)
-                adj = re.sub("(\S+)([н|в])$", "\g<1>\g<2>о", adj)
-                adj = re.sub("(\S+)([ий|ый|ой]ся)$", "\g<1>ееся", adj)
+            gender, noun = get_random_noun()
+            adj = get_random_adj(gender)
             definitions.append(re.sub("\n", "", adj + " " + noun))
     for i in range(len(definitions)):
         if i < len(definitions) - 1:
@@ -165,21 +184,165 @@ def whoami(cmd, user, chat, message, cmd_args):
 
 def dreamteam(cmd, user, chat, message, cmd_args):
     out_str = "Твоя команда мечты:\n\n"
-    out_str += "Тренер: {}\n".format(randname())
-    out_str += "Вратарь: {}\n".format(randname())
+    out_str += "Тренер: {}\n".format(get_random_name())
+    out_str += "Вратарь: {}\n".format(get_random_name())
     out_str += "Защитники: "
     for i in range(4):
-        out_str += "{}, ".format(randname())
+        out_str += "{}, ".format(get_random_name())
     out_str += "\nПолузащитники: "
     for i in range(4):
-        out_str += "{}, ".format(randname())
+        out_str += "{}, ".format(get_random_name())
     out_str += "\nНападающие: "
     for i in range(2):
-        out_str += "{}, ".format(randname())
+        out_str += "{}, ".format(get_random_name())
     bot = cmd.addon.bot
     bot.send_message(chat, out_str, origin_user=user,
                      markup=apply_like_markup(),
                      reply_to=message.message_id)
+
+
+def acronym_preprocessing(acronym):
+    acronym_parts = []
+    acronym = re.sub("[^а-яА-Я]", "", acronym)
+    all_upper = False
+    for a in acronym:
+        if all_upper:
+            a = a.upper()
+        if a.islower():
+            if len(acronym_parts) > 0:
+                acronym_parts[-1] += a
+            elif a.upper() not in valid_acronym_banned:
+                acronym_parts.append(a.upper())
+                all_upper = True
+        elif a not in valid_acronym_banned:
+            acronym_parts.append(a)
+    return acronym_parts
+
+
+def get_acronym_definition_noun(acronym_part):
+    global big_arr
+    global cached_acronyms
+    acronym_part = acronym_part.lower()
+    matching_words = []
+    if acronym_part in cached_acronyms:
+        matching_words = cached_acronyms[acronym_part]
+    else:
+        for gender in big_arr:
+            for word in big_arr[gender]:
+                if re.match("{}(.+)".format(acronym_part), word):
+                    if len(word)==1:
+                        print(word)
+                        print(word)
+                        print(word)
+                    matching_words.append((word, gender))
+        cached_acronyms[acronym_part] = matching_words
+    if len(matching_words) == 0:
+        return None
+    return matching_words
+
+
+def get_acronym_definition_adj(acronym_part, gender):
+    global big_arr
+    global cached_acronyms_adj
+    acronym_part = acronym_part.lower()
+    matching_words = []
+    if acronym_part in cached_acronyms_adj:
+        matching_words = cached_acronyms_adj[acronym_part]
+    else:
+        for word in words_adj:
+            if re.match("{}(.+)".format(acronym_part), word):
+                matching_words.append(word)
+        cached_acronyms_adj[acronym_part] = matching_words
+    if len(matching_words) == 0:
+        return None
+    return [gender_change(w, gender) for w in matching_words]
+
+
+def get_acronym_as_motto(acronym_parts):
+    global big_arr
+    definition = []
+    for p in acronym_parts:
+        matching_words = get_acronym_definition_noun(p)
+        part_def = random.choice(matching_words)
+        print(part_def)
+        if p is None:
+            return None
+        definition.append(part_def[0])
+    out_str = ""
+    if len(definition) > 1:
+        out_str += definition[0][0].upper() + definition[0][1:].strip() + ": "
+        out_str += ", ".join([w.strip() for w in definition[1:]])
+        out_str += "!"
+    else:
+        out_str = definition[0][0].upper() + definition[0][1:].strip() + "!"
+    return out_str
+
+
+def get_acronym_standard(acronym_parts):
+    acronym_scheme = []
+    acronym_definition = []
+    out_str = ""
+    if len(acronym_parts) == 1:
+        matching_words = get_acronym_definition_noun(acronym_parts[0])
+        if matching_words is None:
+            return None
+        out_str = random.choice(matching_words)[0]
+        return out_str
+    acronym_scheme.append((acronym_parts[-1], "noun"))
+    for part in reversed(acronym_parts[:-1]):
+        if random.randrange(100) >= 50:
+            acronym_scheme.append((part, "noun"))
+        else:
+            acronym_scheme.append((part, "adj"))
+    last_gender = ""
+    for scheme_part in acronym_scheme:
+        if scheme_part[1] == "noun":
+            matching_words = get_acronym_definition_noun(scheme_part[0])
+            if matching_words is None:
+                return None
+            selection = random.choice(matching_words)
+            if len(acronym_definition) > 0:
+                acronym_definition[-1] = acronym_definition[-1][0].upper() + acronym_definition[-1][1:]
+            acronym_definition.append(selection[0].strip() + ".")
+            last_gender = selection[1]
+        elif scheme_part[1] == "adj":
+            matching_words = get_acronym_definition_adj(scheme_part[0], last_gender)
+            acronym_definition.append(random.choice(matching_words).strip())
+    out_str = " ".join(reversed(acronym_definition))
+    out_str = out_str[0].upper() + out_str[1:]
+    return out_str
+
+
+def translate_acronym_worker(acronym):
+    acronym_parts = acronym_preprocessing(acronym)
+    out_str = ""
+    if random.randrange(100) >= 50:
+        out_str = get_acronym_as_motto(acronym_parts)
+    else:
+        out_str = get_acronym_standard(acronym_parts)
+    if out_str is None:
+        return "Не удалось расшифровать аббревиатуру. Что-то пошло не так."
+    acronym_with_dots = ". ".join(acronym_parts) + "."
+    out_str = "{} означает:\n\n{}".format(acronym_with_dots, out_str)
+    return out_str
+
+
+def translate_acronym(cmd, user, chat, message, cmd_args):
+    bot = cmd.addon.bot
+    txt = ""
+    if len(cmd_args) == 0:
+        txt = "Не распарсил полезного что-то"
+        bot.send_message(chat, txt, origin_user=user,
+                        reply_to=message.message_id)
+    elif len(cmd_args) > 20:
+        txt = "Слишком длинно. Больше 20 символов пока нельзя"
+        bot.send_message(chat, txt, origin_user=user,
+                        reply_to=message.message_id)
+    else:
+        txt = translate_acronym_worker(cmd_args)
+        bot.send_message(chat, txt, origin_user=user,
+                        markup=apply_like_markup(),
+                        reply_to=message.message_id)
 
 
 # Bot like callback
@@ -272,9 +435,12 @@ cmd_delete_liked = BotCommand(
     "delete_liked", delete_liked, help_text="удалить определённое понравившееся сообщение")
 cmd_clear_liked = BotCommand(
     "clear_liked", clear_liked, help_text="очистить список понравившегося")
+cmd_acronym = BotCommand(
+    "acronym", translate_acronym, help_text="расшифровать аббревиатуру")
 
 cb_like = BotCallback("set_like", like_callback)
 
 noporn_addon = BotAddon("NoPorn", "нет порно!",
-                        [cmd_noporn, cmd_whoami, cmd_dreamteam, cmd_get_liked, cmd_delete_liked,
+                        [cmd_noporn, cmd_whoami, cmd_dreamteam, cmd_acronym,
+                         cmd_get_liked, cmd_delete_liked,
                          cmd_clear_liked], [cb_like])

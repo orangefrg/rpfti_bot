@@ -203,19 +203,19 @@ def dreamteam(cmd, user, chat, message, cmd_args):
 
 def acronym_preprocessing(acronym):
     acronym_parts = []
+    acronym = re.sub("[^а-яА-Я]", "", acronym)
     all_upper = False
     for a in acronym:
-        if bool(re.search('[а-яА-Я]', a)):
-            if all_upper:
-                a = a.upper()
-            if a.islower():
-                if len(acronym_parts) > 0:
-                    acronym_parts[-1] += a
-                elif a.upper() not in valid_acronym_banned:
-                    acronym_parts.append(a.upper())
-                    all_upper = True
-            elif a not in valid_acronym_banned:
-                acronym_parts.append(a)
+        if all_upper:
+            a = a.upper()
+        if a.islower():
+            if len(acronym_parts) > 0:
+                acronym_parts[-1] += a
+            elif a.upper() not in valid_acronym_banned:
+                acronym_parts.append(a.upper())
+                all_upper = True
+        elif a not in valid_acronym_banned:
+            acronym_parts.append(a)
     return acronym_parts
 
 
@@ -229,7 +229,11 @@ def get_acronym_definition_noun(acronym_part):
     else:
         for gender in big_arr:
             for word in big_arr[gender]:
-                if re.match("{}(.*)".format(acronym_part), word) and len(word)>1:
+                if re.match("{}(.+)".format(acronym_part), word):
+                    if len(word)==1:
+                        print(word)
+                        print(word)
+                        print(word)
                     matching_words.append((word, gender))
         cached_acronyms[acronym_part] = matching_words
     if len(matching_words) == 0:
@@ -246,9 +250,9 @@ def get_acronym_definition_adj(acronym_part, gender):
         matching_words = cached_acronyms_adj[acronym_part]
     else:
         for word in words_adj:
-            if re.match("{}(.*)".format(acronym_part), word) and len(word)>1:
+            if re.match("{}(.+)".format(acronym_part), word):
                 matching_words.append(word)
-        cached_acronyms[acronym_part] = matching_words
+        cached_acronyms_adj[acronym_part] = matching_words
     if len(matching_words) == 0:
         return None
     return [gender_change(w, gender) for w in matching_words]
@@ -260,6 +264,7 @@ def get_acronym_as_motto(acronym_parts):
     for p in acronym_parts:
         matching_words = get_acronym_definition_noun(p)
         part_def = random.choice(matching_words)
+        print(part_def)
         if p is None:
             return None
         definition.append(part_def[0])
@@ -324,15 +329,17 @@ def translate_acronym_worker(acronym):
 
 def translate_acronym(cmd, user, chat, message, cmd_args):
     bot = cmd.addon.bot
-    arguments_match = re.search("(\S+)", cmd_args)
     txt = ""
-    if not arguments_match:
-        txt = "Чёт не нашлось аббревиатуры"
+    if len(cmd_args) == 0:
+        txt = "Не распарсил полезного что-то"
+        bot.send_message(chat, txt, origin_user=user,
+                        reply_to=message.message_id)
+    elif len(cmd_args) > 20:
+        txt = "Слишком длинно. Больше 20 символов пока нельзя"
         bot.send_message(chat, txt, origin_user=user,
                         reply_to=message.message_id)
     else:
-        acronym = arguments_match.group(1)
-        txt = translate_acronym_worker(acronym)
+        txt = translate_acronym_worker(cmd_args)
         bot.send_message(chat, txt, origin_user=user,
                         markup=apply_like_markup(),
                         reply_to=message.message_id)

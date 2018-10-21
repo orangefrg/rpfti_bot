@@ -435,7 +435,7 @@ cmd_delete_liked = BotCommand(
 cmd_clear_liked = BotCommand(
     "clear_liked", clear_liked, help_text="очистить список понравившегося")
 cmd_acronym = BotCommand(
-    "acronym", translate_acronym, help_text="расшифровать аббревиатуру")
+    "acr", translate_acronym, help_text="расшифровать аббревиатуру")
 
 cb_like = BotCallback("set_like", like_callback)
 

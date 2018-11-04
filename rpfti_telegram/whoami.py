@@ -13,6 +13,8 @@ import random
 from telebot import types
 from .namez import get_random_name
 import datetime
+import pymorphy2
+
 valid_acronym_banned = ["Ы", "Ь", "Ъ"]
 
 cached_acronyms = {}
@@ -40,6 +42,38 @@ stckr_np = ["BQADAgADAQIAApkvSwqccXZn3KlM4gI",
             "BQADAgADDgMAAqtWmgwqKkx7Jglp8wI",
             "BQADAgAD7AIAAqtWmgwNSBtJt2fqOgI"]
 
+
+prepositions = [
+    ("от", "gent"),
+    ("к", "datv"),
+    ("из-за", "gent"),
+    ("без", "gent"),
+    ("за", "accs"),
+    ("до", "gent"),
+    ("на", "accs"),
+    ("по", "datv"),
+    ("о", "loct"),
+    ("перед", "ablt"),
+    ("при", "loct"),
+    ("через", "accs"),
+    ("с", "gent"),
+    ("у", "gent"),
+    ("над", "loct"),
+    ("об", "loct"),
+    ("под", "ablt"),
+    ("про", "accs"),
+    ("для", "gent"),
+    ("вблизи", "gent"),
+    ("вглубь", "gent"),
+    ("вдоль", "gent"),
+    ("возле", "gent"),
+    ("около", "gent"),
+    ("вокруг", "gent"),
+    ("впереди", "gent"),
+    ("наподобие", "gent"),
+    ("согласно", "datv")
+]
+
 separators = [" и ",
               ". Мы ещё называем это ",
               ", к тому же ещё и ",
@@ -53,14 +87,25 @@ separators = [" и ",
               ", а вчера с утра ты скорее ",
               ". Это нормально для того, чьё имя - ",
               ", ахаха, это как ", ", но мы все зовём тебя "]
+              
+whoami_forms = [
+    """{adj,noun} {prepos,adj,noun}""",
+    """{adj,noun}{connect}{adj,noun}""",
+    """{adj,noun}: {noun}, {noun}, {noun}""",
+    """{noun}{connect}{noun} {adj_case:gent,noun_case:gent}""",
+    """{noun} и {noun}!""",
+    """{noun} по имени {name}""",
+    """{adj,noun} по имени {name}""",
+    """{name}{connect}{adj,noun}!"""
+]
 
 MAX_PHRASES = 2
 NOPORN_PAIRS = 6
 
 words_adj = []
-
 big_arr = {}
 
+morph = pymorphy2.MorphAnalyzer()
 
 def loadwords():
     global big_arr
@@ -81,7 +126,6 @@ def loadwords():
                  len(words_male), len(words_female),
                  len(words_indef), len(words_adj)))
 
-
 def gender_change(word, gender):
     if gender == 'female':
         word = re.sub("(\S+)([с|н])ий$", "\g<1>\g<2>яя", word)
@@ -100,29 +144,92 @@ def get_random_noun():
     key = random.choice(list(big_arr.keys()))
     selected_words = big_arr[key]
     noun = random.choice(selected_words)
-    return key, noun
+    return key, noun.strip()
 
 
 def get_random_adj(gender):
     adj = gender_change(random.choice(words_adj), gender)
-    return adj
+    return adj.strip()
 
+def parse_form(form):
+    templ = re.compile("\{([\w,_:]+)\}")
+    template = []
+    lastpos = 0
+    for mtch in templ.finditer(form):
+        current_options = []
+        for match_part in mtch.group(1).split(","):
+            part = {}
+            if "_" in match_part:
+                match_part_subparts = match_part.split("_")
+                part["name"] = match_part_subparts[0]
+                for p in match_part_subparts[1:]:
+                    part[p.split(":")[0]] = p.split(":")[1]
+            else:
+                part["name"] = match_part
+            current_options.append(part)
+        if mtch.start() != lastpos:
+            template.append([{
+                "name": "spacer",
+                "value": form[lastpos:mtch.start()]
+            }])
+        lastpos = mtch.end()
+        template.append(current_options)
+    if lastpos < len(form):
+        template.append([{
+            "name": "spacer",
+            "value": form[lastpos:len(form)]
+        }])
+    return template
+
+def make_string_from_template(template):
+    out_string = ""
+    for options in template:
+        gender = None
+        case = None
+        for i in range(2):
+            for opt in options:
+                if opt["name"] == "noun":
+                    current_case = None
+                    if not "value" in opt:
+                        gender, opt["value"] = get_random_noun()
+                    if "case" in opt:
+                        current_case = opt["case"]
+                    elif case is not None:
+                        current_case = case
+                    if current_case is not None:
+                        prs = morph.parse(opt["value"])[0]
+                        opt["value"] = prs.inflect({current_case}).word
+                elif opt["name"] == "adj":
+                    current_case = None
+                    if not "value" in opt:
+                        opt["value"] = get_random_adj("male")
+                    if gender in ["female", "indef"]:
+                        opt["value"] = gender_change(opt["value"], gender)
+                    if "case" in opt:
+                        current_case = opt["case"]
+                    elif case is not None:
+                        current_case = case
+                    if current_case is not None:
+                        prs = morph.parse(opt["value"])[0]
+                        opt["value"] = prs.inflect({current_case}).word
+                elif opt["name"] == "prepos":
+                    if not "value" in opt:
+                        prep = random.choice(prepositions)
+                        opt["value"] = prep[0]
+                        case = prep[1]
+                elif opt["name"] == "connect":
+                    if not "value" in opt:
+                        opt["value"] = random.choice(separators)
+                elif opt["name"] == "name":
+                    opt["value"] = get_random_name()
+        options_string = " ".join([a["value"] for a in options])
+        out_string += options_string
+    return out_string
 
 def make_phrase(username):
     outstr = username + ", ты - "
-    definitions = []
-    for i in range(MAX_PHRASES):
-        name_or_voc = random.randrange(100)
-        if name_or_voc > 80:
-            definitions.append("чувак с именем " + get_random_name())
-        else:
-            gender, noun = get_random_noun()
-            adj = get_random_adj(gender)
-            definitions.append(re.sub("\n", "", adj + " " + noun))
-    for i in range(len(definitions)):
-        if i < len(definitions) - 1:
-            definitions[i] += random.choice(separators)
-        outstr += definitions[i]
+    templ = parse_form(random.choice(whoami_forms))
+    outstr += make_string_from_template(templ)
     return outstr
 
 

@@ -11,6 +11,8 @@ import logging
 import telebot
 import json
 import random
+from telebot.apihelper import get_me
+from django.db.models import Q
 
 # Bot command class
 # Contains command text (as typed by user, but without slashes),
@@ -88,7 +90,11 @@ class BotCore:
         self.models = models
         self.WEBHOOK_URL_BASE = settings["url"]
         self.WEBHOOK_SSL_CERT = settings["cert"]
-        self.bot = telebot.TeleBot(settings["token"], threaded=False)
+        self.TOKEN = settings["token"]
+        myself = get_me(self.TOKEN)
+        self.telegram_name = myself["username"]
+        self.user_id = myself["id"]
+        self.bot = telebot.TeleBot(self.TOKEN, threaded=False)
         self.name = settings["name"]
         try:
             db_bot = models["Bots"].objects.get(name__exact=self.name)
@@ -206,13 +212,35 @@ class BotCore:
         pass
 
     def get_context(self, addon, msg_id=None, user=None, chat=None):
-        context = list(self._retrieve_context(addon, msg_id, user, chat).values())
+        context = self._retrieve_context(addon.name, msg_id, user, chat)
+        if context is not None and context.count() > 0:
+            for c in context:
+                c["context"] = json.loads(c["context"])
+        return context
+
+    def _get_addons_by_context(self, msg_id, telegram_user, telegram_chat):
+        context = self.models["Context"].filter(message=msg_id)
+        if context.count() == 0:
+            context = self.models["Context"].filter(message__isnull=True, user__telegram_id=telegram_user, chat__telegram_id=telegram_chat)
+            if context.count() == 0:
+                context = self.models["Context"].filter(
+                    Q(message__isnull=True),
+                    Q(user__telegram_id=telegram_user) & Q(chat__isnull=True) | Q(chat__telegram_id=telegram_chat) & Q(user__isnull=True))
+        if context.count() == 0:
+            return None
+        all_addons = {}
         for c in context:
-            c["context"] = json.loads(c["context"])
-        return context 
+            addons = list(filter(lambda a: a.name == c.addon, self.addons))
+            if len(addons) == 1:
+                if addons[0] not in all_addons:
+                    all_addons[addons[0]] = []
+                all_addons[addons[0]].append(c)
+        return all_addons
+
+
 
     def drop_context(self, addon, msg_id=None, user=None, chat=None):
-        context = self._retrieve_context(addon, msg_id, user, chat)
+        context = self._retrieve_context(addon.name, msg_id, user, chat)
         context.delete()
 
     def send_message(self, chat, text=None, origin_user=None, reply_to=None,
@@ -461,7 +489,6 @@ class BotCore:
         task.counter += 1
         task.save()
 
-
     def declare(self):
         self.declared = True
 
@@ -486,6 +513,10 @@ class BotCore:
                 logging.error("{} was triggered but not found".format(cmd))
                 return False
             command.call(db_user, db_chat, message, args)
+            return True
+
+        @self.bot.message_handler(func=lambda message: message.reply_to_message is not None and message.reply_to_message.from_user.id == self.user_id)
+        def process_reply(message):
             return True
 
         @self.bot.callback_query_handler(func=lambda call: True)

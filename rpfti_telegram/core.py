@@ -170,6 +170,51 @@ class BotCore:
                 counter += 1
         return messages
 
+    def keep_context(self, addon, context, msg_id=None, user=None, chat=None):
+        context_serialized = json.dumps(context)
+        stored_context = self.models["Context"](
+            #TODO: get rid of this blyadstvo with requesting bot EACH FUCKING TIME from the base
+            bot = self.models["Bots"].objects.get(name=self.name),
+            addon = addon.name,
+            context = context_serialized
+        )
+        if msg_id is not None:
+            stored_context.message = msg_id
+        else:
+            if user is not None:
+                stored_context.user = self.get_user(user)
+            if chat is not None:
+                stored_context.chat = self.get_chat(chat)
+        stored_context.save()
+
+    def _retrieve_context(self, addon, msg_id=None, user=None, chat=None):
+        params = {
+            "addon": addon.name,
+            "bot": self.models["Bots"].objects.get(name=self.name),
+        }
+        if msg_id is not None:
+            params["message"] = msg_id
+        else:
+            if user is not None:
+                params["user"] = self.get_user(user)
+            if chat is not None:
+                params["chat"] = self.get_chat(chat)
+        return self.models["Context"].filter(**params)
+    
+    def modify_context(self, addon, context, msg_id=None, user=None, chat=None):
+        #TODO: context modification
+        pass
+
+    def get_context(self, addon, msg_id=None, user=None, chat=None):
+        context = list(self._retrieve_context(addon, msg_id, user, chat).values())
+        for c in context:
+            c["context"] = json.loads(c["context"])
+        return context 
+
+    def drop_context(self, addon, msg_id=None, user=None, chat=None):
+        context = self._retrieve_context(addon, msg_id, user, chat)
+        context.delete()
+
     def send_message(self, chat, text=None, origin_user=None, reply_to=None,
                      markup=None, disable_preview=False,
                      payload={}, force=False, mute=False, parse_mode=None):

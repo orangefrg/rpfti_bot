@@ -33,6 +33,8 @@ class Bot(models.Model):
     description = models.TextField(null=True)
     is_active = models.BooleanField(default=False)
     start_time = models.DateTimeField()
+    telegram_name = models.CharField(max_length=200, null=True)
+    telegram_id = models.IntegerField(null=True)
 
 
 class TelegramUser(models.Model):

@@ -30,6 +30,10 @@ class RpftiConfig(AppConfig):
         from rpfti.models import Message, Like, ScheduledTask, TouretteUser
         from rpfti.models import Context
 
+        if not has_uwsgi:
+            print("Dummy run (without UWSGI)")
+            return True
+
         global mainbot
         shared_config = rpfti.shared_config
         main_models = {}
@@ -53,6 +57,7 @@ class RpftiConfig(AppConfig):
         roles = {}
         roles["o_range"] = "ADMIN"
 
+
         mainbot = BotCore(main_models, settings, roles)
         mainbot.insert_addon(core_addon)
         mainbot.insert_addon(noporn_addon)
@@ -67,9 +72,8 @@ class RpftiConfig(AppConfig):
         def check_tasks(signum):
             mainbot.check_tasks()
 
-        if has_uwsgi:
-            uwsgi.register_signal(99, "", check_tasks)
-            uwsgi.add_timer(99, 10)
+        uwsgi.register_signal(99, "", check_tasks)
+        uwsgi.add_timer(99, 10)
 
         for k, v in roles.items():
             if v == "ADMIN":

@@ -91,9 +91,6 @@ class BotCore:
         self.WEBHOOK_URL_BASE = settings["url"]
         self.WEBHOOK_SSL_CERT = settings["cert"]
         self.TOKEN = settings["token"]
-        myself = get_me(self.TOKEN)
-        self.telegram_name = myself["username"]
-        self.user_id = myself["id"]
         self.bot = telebot.TeleBot(self.TOKEN, threaded=False)
         self.name = settings["name"]
         try:
@@ -103,7 +100,10 @@ class BotCore:
             db_bot.is_active = False
             db_bot.description = settings["description"]
             db_bot.start_time = datetime.datetime.utcnow()
-            db_bot.save()
+        myself = get_me(self.TOKEN)
+        db_bot.telegram_id = myself["id"]
+        db_bot.telegram_name = myself["username"]
+        db_bot.save()
         self.db_bot = db_bot
         self.declare()
         self.all_bots.append(self)
@@ -520,7 +520,7 @@ class BotCore:
             command.call(db_user, db_chat, message, args)
             return True
 
-        @self.bot.message_handler(func=lambda message: message.reply_to_message is not None and message.reply_to_message.from_user.id == self.user_id)
+        @self.bot.message_handler(func=lambda message: message.reply_to_message is not None and message.reply_to_message.from_user.id == self.db_bot.telegram_id)
         def process_reply(message):
             db_chat, db_user = self.check_user_and_chat(message)
             all_addons = self._get_addons_by_context(message.reply_to_message, db_user, db_chat)

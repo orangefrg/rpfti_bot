@@ -11,6 +11,8 @@ import logging
 import telebot
 import json
 import random
+from telebot.apihelper import get_me
+from django.db.models import Q
 
 # Bot command class
 # Contains command text (as typed by user, but without slashes),
@@ -88,7 +90,11 @@ class BotCore:
         self.models = models
         self.WEBHOOK_URL_BASE = settings["url"]
         self.WEBHOOK_SSL_CERT = settings["cert"]
-        self.bot = telebot.TeleBot(settings["token"], threaded=False)
+        self.TOKEN = settings["token"]
+        myself = get_me(self.TOKEN)
+        self.telegram_name = myself["username"]
+        self.user_id = myself["id"]
+        self.bot = telebot.TeleBot(self.TOKEN, threaded=False)
         self.name = settings["name"]
         try:
             db_bot = models["Bots"].objects.get(name__exact=self.name)
@@ -170,6 +176,73 @@ class BotCore:
                 counter += 1
         return messages
 
+    def keep_context(self, addon, context, msg_id=None, user=None, chat=None):
+        context_serialized = json.dumps(context)
+        stored_context = self.models["Context"](
+            #TODO: get rid of this blyadstvo with requesting bot EACH FUCKING TIME from the base
+            bot = self.models["Bots"].objects.get(name=self.name),
+            addon = addon.name,
+            context = context_serialized
+        )
+        if msg_id is not None:
+            stored_context.message = msg_id
+        else:
+            if user is not None:
+                stored_context.user = user
+            if chat is not None:
+                stored_context.chat = chat
+        stored_context.save()
+
+    def _retrieve_context(self, addon, msg_id=None, user=None, chat=None):
+        params = {
+            "addon": addon.name,
+            "bot": self.models["Bots"].objects.get(name=self.name),
+        }
+        if msg_id is not None:
+            params["message"] = msg_id
+        else:
+            if user is not None:
+                params["user"] = user
+            if chat is not None:
+                params["chat"] = chat
+        return self.models["Context"].objects.filter(**params)
+    
+    def modify_context(self, addon, context, msg_id=None, user=None, chat=None):
+        #TODO: context modification
+        pass
+
+    def get_context(self, addon, msg_id=None, user=None, chat=None):
+        context = self._retrieve_context(addon.name, msg_id, user, chat)
+        if context is not None and context.count() > 0:
+            for c in context:
+                c["context"] = json.loads(c["context"])
+        return context
+
+    def _get_addons_by_context(self, message, user, chat):
+        context = self.models["Context"].objects.filter(message=message.message_id)
+        if context.count() == 0:
+            context = self.models["Context"].objects.filter(message__isnull=True, user=user, chat=chat)
+            if context.count() == 0:
+                context = self.models["Context"].objects.filter(
+                    Q(message__isnull=True),
+                    Q(user=user) & Q(chat__isnull=True) | Q(chat=chat) & Q(user__isnull=True))
+        if context.count() == 0:
+            return []
+        all_addons = {}
+        for c in context:
+            addons = list(filter(lambda a: a.name == c.addon, self.addons))
+            if len(addons) == 1:
+                if addons[0] not in all_addons:
+                    all_addons[addons[0]] = []
+                all_addons[addons[0]].append(c)
+        return all_addons
+
+
+
+    def drop_context(self, addon, msg_id=None, user=None, chat=None):
+        context = self._retrieve_context(addon.name, msg_id, user, chat)
+        context.delete()
+
     def send_message(self, chat, text=None, origin_user=None, reply_to=None,
                      markup=None, disable_preview=False,
                      payload={}, force=False, mute=False, parse_mode=None):
@@ -179,6 +252,7 @@ class BotCore:
                 "Trying to send message to an inactive chat or by inactive bot")
             return
         counter = 0
+        all_sent = []
         while counter <= GLOBAL_MSG_TRY_LIMIT:
             try:
                 if text is not None:
@@ -191,14 +265,14 @@ class BotCore:
                             reply_to_message_id=reply_to,
                             disable_notification=mute,
                             parse_mode=parse_mode)
-                        self._log_message(sent, origin_user)
+                    all_sent.append(sent)
                 if "STICKER" in payload:
                     sent = self.bot.send_sticker(chat.telegram_id,
                                                  payload["STICKER"]["id"],
                                                  reply_markup=markup,
                                                  reply_to_message_id=reply_to,
                                                  disable_notification=mute)
-                    self._log_message(sent, origin_user)
+                    all_sent.append(sent)
                 if "AUDIO" in payload:
                     sent = self.bot.send_audio(chat.telegram_id,
                                                payload["AUDIO"]["file"],
@@ -208,7 +282,7 @@ class BotCore:
                                                reply_markup=markup,
                                                reply_to_message_id=reply_to,
                                                disable_notification=mute)
-                    self._log_message(sent, origin_user)
+                    all_sent.append(sent)
                 if "VOICE" in payload:
                     sent = self.bot.send_voice(chat.telegram_id,
                                                payload["VOICE"]["file"],
@@ -216,7 +290,7 @@ class BotCore:
                                                reply_markup=markup,
                                                reply_to_message_id=reply_to,
                                                disable_notification=mute)
-                    self._log_message(sent, origin_user)
+                    all_sent.append(sent)
                 if "PHOTO" in payload:
                     sent = self.bot.send_photo(chat.telegram_id,
                                                payload["PHOTO"]["file"],
@@ -224,7 +298,7 @@ class BotCore:
                                                reply_markup=markup,
                                                reply_to_message_id=reply_to,
                                                disable_notification=mute)
-                    self._log_message(sent, origin_user)
+                    all_sent.append(sent)
                 if "LOCATION" in payload:
                     sent = self.bot.send_location(chat.telegram_id, latitude=payload[
                         "LOCATION"]["lat"],
@@ -232,7 +306,7 @@ class BotCore:
                         reply_markup=markup,
                         reply_to_message_id=reply_to,
                         disable_notification=mute)
-                    self._log_message(sent, origin_user)
+                    all_sent.append(sent)
                 if "DOCUMENT" in payload:
                     sent = self.bot.send_document(chat.telegram_id,
                                                   payload["DOCUMENT"]["file"],
@@ -240,7 +314,7 @@ class BotCore:
                                                   reply_markup=markup,
                                                   reply_to_message_id=reply_to,
                                                   disable_notification=mute)
-                    self._log_message(sent, origin_user)
+                    all_sent.append(sent)
                 if "VIDEO" in payload:
                     if payload["VIDEO"]["type"] == "note":
                         sent = self.bot.send_video_note(chat.telegram_id, payload[
@@ -255,7 +329,7 @@ class BotCore:
                                                    reply_markup=markup,
                                                    reply_to_message_id=reply_to,
                                                    disable_notification=mute)
-                    self._log_message(sent, origin_user)
+                    all_sent.append(sent)
                 if "CONTACT" in payload:
                     sent = self.bot.send_sticker(chat.telegram_id,
                                                  payload["CONTACT"]["phone"],
@@ -264,11 +338,14 @@ class BotCore:
                                                  reply_markup=markup,
                                                  reply_to_message_id=reply_to,
                                                  disable_notification=mute)
-                    self._log_message(sent, origin_user)
-                return
+                    all_sent.append(sent)              
+                for s in all_sent:
+                    self._log_message(s, origin_user)
+                return all_sent
             except Exception as e:
                 print(e)
                 counter += 1
+            return None
 
     def get_user(self, user):
         try:
@@ -416,7 +493,6 @@ class BotCore:
         task.counter += 1
         task.save()
 
-
     def declare(self):
         self.declared = True
 
@@ -441,6 +517,15 @@ class BotCore:
                 logging.error("{} was triggered but not found".format(cmd))
                 return False
             command.call(db_user, db_chat, message, args)
+            return True
+
+        @self.bot.message_handler(func=lambda message: message.reply_to_message is not None and message.reply_to_message.from_user.id == self.user_id)
+        def process_reply(message):
+            db_chat, db_user = self.check_user_and_chat(message)
+            all_addons = self._get_addons_by_context(message.reply_to_message, db_user, db_chat)
+            for a in all_addons:
+                for c in all_addons[a]:
+                    a.process_reply(c, db_user, db_chat, message)
             return True
 
         @self.bot.callback_query_handler(func=lambda call: True)

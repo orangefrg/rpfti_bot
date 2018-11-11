@@ -28,6 +28,7 @@ class RpftiConfig(AppConfig):
         from rpfti.rpfti_telegram.cbrf import cbrf_addon
         from rpfti.models import Bot, TelegramUser, TelegramChat
         from rpfti.models import Message, Like, ScheduledTask, TouretteUser
+        from rpfti.models import Context
 
         global mainbot
         shared_config = rpfti.shared_config
@@ -39,6 +40,7 @@ class RpftiConfig(AppConfig):
         main_models["Likes"] = Like
         main_models["Tasks"] = ScheduledTask
         main_models["TouretteUser"] = TouretteUser
+        main_models["Context"] = Context
 
         settings = {}
         settings["url"] = shared_config.WEBHOOK_URL_BASE + \

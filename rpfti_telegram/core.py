@@ -74,11 +74,11 @@ class BotCore:
         logging.info("Bot {} binded to webhook".format(self.name))
 
     def get_activity_global(self):
-        bot_db = self.models["Bots"].objects.filter(name=self.name)[0]
+        bot_db = self.db_bot
         return bot_db.is_active
 
     def set_activity_global(self, activity):
-        bot_db = self.models["Bots"].objects.filter(name=self.name)[0]
+        bot_db = self.db_bot
         bot_db.is_active = activity
         bot_db.save()
 
@@ -180,8 +180,7 @@ class BotCore:
     def keep_context(self, addon, context, msg_id=None, user=None, chat=None):
         context_serialized = json.dumps(context)
         stored_context = self.models["Context"](
-            #TODO: get rid of this blyadstvo with requesting bot EACH FUCKING TIME from the base
-            bot = self.models["Bots"].objects.get(name=self.name),
+            bot = self.db_bot,
             addon = addon.name,
             context = context_serialized
         )
@@ -197,7 +196,7 @@ class BotCore:
     def _retrieve_context(self, addon, msg_id=None, user=None, chat=None):
         params = {
             "addon": addon.name,
-            "bot": self.models["Bots"].objects.get(name=self.name),
+            "bot": self.db_bot,
         }
         if msg_id is not None:
             params["message"] = msg_id
@@ -355,7 +354,7 @@ class BotCore:
                 bot__name=self.name, telegram_id=user.id)
         except self.models["Users"].DoesNotExist:
             db_user = self.models["Users"]()
-            db_user.bot = self.models["Bots"].objects.get(name=self.name)
+            db_user.bot = self.db_bot
             db_user.telegram_id = user.id
             db_user.first_name = user.first_name
             db_user.last_name = user.last_name
@@ -375,7 +374,7 @@ class BotCore:
                 bot__name=self.name, telegram_id=chat.id)
         except self.models["Chats"].DoesNotExist:
             db_chat = self.models["Chats"]()
-            db_chat.bot = self.models["Bots"].objects.get(name=self.name)
+            db_chat.bot = self.db_bot
             db_chat.telegram_id = chat.id
             db_chat.chat_type = chat.type
             if db_chat.chat_type == "private":
@@ -445,7 +444,7 @@ class BotCore:
                 task.save()
                 return False
         task = self.models["Tasks"]()
-        task.bot = self.models["Bots"].objects.get(name=self.name)
+        task.bot = self.db_bot
         task.chat = db_chat
         task.random_time = random_reset
         task.trigger_time = trigger_time

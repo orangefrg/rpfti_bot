@@ -205,7 +205,7 @@ class BotCore:
                 params["user"] = user
             if chat is not None:
                 params["chat"] = chat
-        return self.models["Context"].filter(**params)
+        return self.models["Context"].objects.filter(**params)
     
     def modify_context(self, addon, context, msg_id=None, user=None, chat=None):
         #TODO: context modification
@@ -219,15 +219,15 @@ class BotCore:
         return context
 
     def _get_addons_by_context(self, message, user, chat):
-        context = self.models["Context"].filter(message=message.message_id)
+        context = self.models["Context"].objects.filter(message=message.message_id)
         if context.count() == 0:
-            context = self.models["Context"].filter(message__isnull=True, user=user, chat=chat)
+            context = self.models["Context"].objects.filter(message__isnull=True, user=user, chat=chat)
             if context.count() == 0:
-                context = self.models["Context"].filter(
+                context = self.models["Context"].objects.filter(
                     Q(message__isnull=True),
                     Q(user=user) & Q(chat__isnull=True) | Q(chat=chat) & Q(user__isnull=True))
         if context.count() == 0:
-            return None
+            return []
         all_addons = {}
         for c in context:
             addons = list(filter(lambda a: a.name == c.addon, self.addons))
@@ -522,7 +522,7 @@ class BotCore:
         @self.bot.message_handler(func=lambda message: message.reply_to_message is not None and message.reply_to_message.from_user.id == self.user_id)
         def process_reply(message):
             db_chat, db_user = self.check_user_and_chat(message)
-            all_addons = self._get_addons_by_context(message, db_user, db_chat)
+            all_addons = self._get_addons_by_context(message.reply_to_message, db_user, db_chat)
             for a in all_addons:
                 for c in all_addons[a]:
                     a.process_reply(c, db_user, db_chat, message)

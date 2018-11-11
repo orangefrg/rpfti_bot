@@ -1,4 +1,5 @@
 from datetime import timedelta, datetime
+import json
 
 class BotCommand:
 
@@ -58,9 +59,10 @@ class BotAddon:
             t.addon = self
 
 
-    def process_reply(self, context, user, chat, message):
+    def process_reply(self, db_context, user, chat, message):
         if self.reply_handler is not None:
-            return self.reply_handler(context, user, chat, message)
+            context = json.loads(db_context.context)
+            return self.reply_handler(self, db_context, context, user, chat, message)
         return False
 
 

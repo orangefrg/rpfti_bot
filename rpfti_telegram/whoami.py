@@ -439,7 +439,7 @@ def translate_acronym(cmd, user, chat, message, cmd_args):
     txt = ""
     markup = None
     if len(cmd_args) == 0:
-        txt = "Не распарсил полезного что-то"
+        txt = "Пришли аббревиатуру ответом на это сообщение"
         all_sent = bot.send_message(chat, txt, origin_user=user,
                         reply_to=message.message_id)
         context = {
@@ -537,7 +537,7 @@ def delete_liked(cmd, user, chat, message, cmd_args):
                      reply_to=message.message_id)
 
 
-def whoami_reply_handler(addon, context, user, chat, message):
+def whoami_reply_handler(addon, db_context, context, user, chat, message):
     bot = addon.bot
     markup = None
     if "command" in context:

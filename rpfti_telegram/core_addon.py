@@ -43,18 +43,25 @@ class BotTask:
 class BotAddon:
 
     def __init__(self, name, description, commands=[],
-                 callbacks=[], tasks=[]):
+                 callbacks=[], tasks=[], reply_handler=None):
         self.name = name
         self.description = description
         self.commands = commands
         self.callbacks = callbacks
         self.tasks = tasks
+        self.reply_handler = reply_handler
         for c in self.commands:
             c.addon = self
         for c in self.callbacks:
             c.addon = self
         for t in self.tasks:
             t.addon = self
+
+
+    def process_reply(self, context, user, chat, message):
+        if self.reply_handler is not None:
+            return self.reply_handler(context, user, chat, message)
+        return False
 
 
 def start_bot(cmd, user, chat, message, cmd_args):

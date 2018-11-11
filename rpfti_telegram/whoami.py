@@ -101,6 +101,7 @@ whoami_forms = [
 
 MAX_PHRASES = 2
 NOPORN_PAIRS = 6
+ACRONYM_LENGTH_LIMIT = 25
 
 words_adj = []
 big_arr = {}
@@ -436,18 +437,27 @@ def translate_acronym_worker(acronym):
 def translate_acronym(cmd, user, chat, message, cmd_args):
     bot = cmd.addon.bot
     txt = ""
+    markup = None
     if len(cmd_args) == 0:
         txt = "Не распарсил полезного что-то"
-        bot.send_message(chat, txt, origin_user=user,
+        all_sent = bot.send_message(chat, txt, origin_user=user,
                         reply_to=message.message_id)
-    elif len(cmd_args) > 20:
-        txt = "Слишком длинно. Больше 20 символов пока нельзя"
+        context = {
+            "command": "acronym",
+            "action": "request_reply"
+        }
+        for a in all_sent:
+            bot.keep_context(cmd.addon, context, a.message_id)
+    elif len(cmd_args) > ACRONYM_LENGTH_LIMIT:
+        txt = "Слишком длинно. Больше {} символов пока нельзя".format(ACRONYM_LENGTH_LIMIT)
         bot.send_message(chat, txt, origin_user=user,
                         reply_to=message.message_id)
     else:
-        txt = translate_acronym_worker(cmd_args)
+        txt, outcome = translate_acronym_worker(cmd_args)
+        if outcome:
+            markup = apply_like_markup()
         bot.send_message(chat, txt, origin_user=user,
-                        markup=apply_like_markup(),
+                        markup=markup,
                         reply_to=message.message_id)
 
 
@@ -527,6 +537,30 @@ def delete_liked(cmd, user, chat, message, cmd_args):
                      reply_to=message.message_id)
 
 
+def whoami_reply_handler(addon, context, user, chat, message):
+    bot = addon.bot
+    markup = None
+    if "command" in context:
+        if context["command"] == "acronym":
+            if "action" in context and context["action"] == "request_reply":
+                if message.text is None:
+                    if message.photo is not None:
+                        txt = "Ты мне ещё ньюдс пришли..."
+                    else:
+                        txt = "Нужно прислать текст"
+                elif len(message.text) == 0:
+                    txt = "Текст что-то пустой"
+                elif len(message.text) > ACRONYM_LENGTH_LIMIT:
+                    txt = "Длинновато, пока что нужно менее {} символов".format(ACRONYM_LENGTH_LIMIT)
+                else:
+                    txt = translate_acronym_worker(message.text)
+                    markup = apply_like_markup()
+                bot.send_message(chat, txt, origin_user=user,
+                                markup=markup,
+                                reply_to=message.message_id)
+                
+
+
 loadwords()
 
 cmd_noporn = BotCommand(
@@ -546,7 +580,7 @@ cmd_acronym = BotCommand(
 
 cb_like = BotCallback("set_like", like_callback)
 
-noporn_addon = BotAddon("NoPorn", "нет порно!",
+noporn_addon = BotAddon("NoPorn", "познание себя через отказ от порно",
                         [cmd_noporn, cmd_whoami, cmd_dreamteam, cmd_acronym,
                          cmd_get_liked, cmd_delete_liked,
-                         cmd_clear_liked], [cb_like])
+                         cmd_clear_liked], [cb_like], reply_handler=whoami_reply_handler)

@@ -1,7 +1,8 @@
 from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse, HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseNotFound, HttpResponseServerError
 from rpfti.apps import get_bot
 import telebot
+import traceback, sys
 
 cntr = 0
 mainbot = None
@@ -13,6 +14,7 @@ def mon(request):
 
 @csrf_exempt
 def bot(request):
+    update = "No update detected"
     try:
         global mainbot
         if mainbot is None:
@@ -22,8 +24,11 @@ def bot(request):
         json_string = request.body.decode("utf-8")
         update = telebot.types.Update.de_json(json_string)
         mainbot.bot.process_new_updates([update])
-    except:
-        return HttpResponseNotFound()
+    except Exception as e:
+        print("---EXCEPTION---")
+        traceback.print_exc(limit=2, file=sys.stdout)
+        print("DURING REQUEST: {}".format(update))
+        return HttpResponseServerError()
     return HttpResponse()
 
 @csrf_exempt

@@ -104,6 +104,7 @@ class BotCore:
             db_bot.description = settings["description"]
             db_bot.start_time = datetime.datetime.utcnow()
             db_bot.save()
+        self.db_bot = db_bot
         self.declare()
         self.all_bots.append(self)
 
@@ -346,6 +347,7 @@ class BotCore:
                 print(e)
                 counter += 1
             return None
+
 
     def get_user(self, user):
         try:

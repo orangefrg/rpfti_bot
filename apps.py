@@ -67,7 +67,6 @@ class RpftiConfig(AppConfig):
         mainbot.insert_addon(weather_addon)
         mainbot.insert_addon(cbrf_addon)
         mainbot.bind()
-        mainbot.declare()
 
         def check_tasks(signum):
             mainbot.check_tasks()

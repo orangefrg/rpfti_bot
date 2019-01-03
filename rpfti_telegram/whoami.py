@@ -84,9 +84,9 @@ companies = [
 company_forms = [
     """{adj,noun}""",
     """{noun}""",
-    """{noun}{prepos,noun}""",
-    """{name}{prepos,noun}""",
-    """{adj}{name}""",
+    """{noun} {prepos,noun}""",
+    """{name} {prepos,noun}""",
+    """{adj} {name}""",
     """{name}, {name} и {name}""",
     """{name} и сыновья""",
     """{noun} - {noun_case:datv}"""
@@ -338,14 +338,18 @@ def dreamteam(cmd, user, chat, message, cmd_args):
 
 
 def get_random_profession():
-    profession = professions[random.choice(professions.keys())]
+    profession = professions[random.choice(list(professions.keys()))]
     templ = parse_form(random.choice(company_forms))
-    outstr = "{} в {} \"{}\"".format(profession, random.choice(companies), make_string_from_template(templ))
+    c_type = random.choice(companies)
+    c_name = make_string_from_template(templ)
+    c_name = c_name[0].upper() + c_name[1:]
+    print(c_type, c_name)
+    outstr = "{} в {} \"{}\"".format(profession, c_type, c_name)
     return outstr
 
 
 def my_profession(cmd, user, chat, message, cmd_args):
-    out_str = "Твоя психологическая профессия:\n{}".format(get_random_profession)
+    out_str = "Твоя психологическая профессия:\n{}".format(get_random_profession())
     bot = cmd.addon.bot
     bot.send_message(chat, out_str, origin_user=user,
                      markup=apply_like_markup(),

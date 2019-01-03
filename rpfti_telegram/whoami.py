@@ -87,9 +87,15 @@ company_forms = [
     """{noun} {prepos,noun}""",
     """{name} {prepos,noun}""",
     """{adj} {name}""",
-    """{name}, {name} и {name}""",
+    """{name} и {name}""",
     """{name} и сыновья""",
-    """{noun} - {noun_case:datv}"""
+    """{noun} - {noun_case:datv}""",
+    """{adj}""",
+    """70-летия {noun_case:gent}""",
+    """Вечный {noun_case:gent}""",
+    """{noun} Интернешнл""",
+    """{noun} Трейдинг""",
+    """{noun} Кэпитал"""
 ]
 
 separators = [" и ",

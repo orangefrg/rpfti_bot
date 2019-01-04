@@ -51,14 +51,14 @@ def _parse_temperature_response(response):
                 trend_direction = None
                 day_avg = None
                 for t in current_reading["trends"]:
-                    if t["period_seconds"] == 10800:
+                    if t["period_seconds"] == 10800 and "direction" in t:
                         if t["direction"] != "stable":
                             trend_value = abs(round(t["slope"] * 3600, 2))
                             if t["direction"] == "increase":
                                 trend_direction = "Растёт"
                             elif t["direction"] == "decrease":
                                 trend_direction = "Падает"
-                    elif t["period_seconds"] == 86400:
+                    elif t["period_seconds"] == 86400 and "average" in t:
                         day_avg = round(t["average"]["reading"], 2)
                 if trend_value is not None:
                     report += "\n{} на {}{} в час (за последние 3 часа)".format(trend_direction, trend_value, units)

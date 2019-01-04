@@ -616,27 +616,37 @@ def whoami_reply_handler(addon, db_context, context, user, chat, message):
 
 loadwords()
 
-cmd_noporn = BotCommand(
+def cmd_noporn():
+    return BotCommand(
     "x", antiporn, help_text="скрыть плохую картинку стикерами и сообщениями")
-cmd_whoami = BotCommand(
+def cmd_whoami():
+    return BotCommand(
     "whoami", whoami, help_text="познать себя")
-cmd_my_profession = BotCommand(
+def cmd_my_profession():
+    return BotCommand(
     "myprof", my_profession, help_text="моя психологическая профессия"
 )
-cmd_dreamteam = BotCommand(
+def cmd_dreamteam():
+    return BotCommand(
     "dreamteam", dreamteam, help_text="составить свою команду мечты")
-cmd_get_liked = BotCommand(
+def cmd_get_liked():
+    return BotCommand(
     "get_liked", get_liked, help_text="получить список понравившегося")
-cmd_delete_liked = BotCommand(
+def cmd_delete_liked():
+    return BotCommand(
     "delete_liked", delete_liked, help_text="удалить определённое понравившееся сообщение")
-cmd_clear_liked = BotCommand(
+def cmd_clear_liked():
+    return BotCommand(
     "clear_liked", clear_liked, help_text="очистить список понравившегося")
-cmd_acronym = BotCommand(
+def cmd_acronym():
+    return BotCommand(
     "acr", translate_acronym, help_text="расшифровать аббревиатуру")
 
-cb_like = BotCallback("set_like", like_callback)
+def cb_like():
+    return BotCallback("set_like", like_callback)
 
-noporn_addon = BotAddon("NoPorn", "познание себя через отказ от порно",
-                        [cmd_noporn, cmd_whoami, cmd_my_profession, cmd_dreamteam, cmd_acronym,
-                         cmd_get_liked, cmd_delete_liked,
-                         cmd_clear_liked], [cb_like], reply_handler=whoami_reply_handler)
+def make_noporn_addon():
+    return BotAddon("NoPorn", "познание себя через отказ от порно",
+                        [cmd_noporn(), cmd_whoami(), cmd_my_profession(), cmd_dreamteam(), cmd_acronym(),
+                         cmd_get_liked(), cmd_delete_liked(),
+                         cmd_clear_liked()], [cb_like()], reply_handler=whoami_reply_handler)

@@ -85,8 +85,10 @@ def get_weather(cmd, user, chat, message, cmd_args):
         bot.send_message(chat, r, origin_user=user,
                         reply_to=message.message_id)
 
-cmd_weather = BotCommand(
+def cmd_weather():
+    return BotCommand(
     "weather_nn", get_weather, help_text="температура за окном (Нижний Новгород, заречная часть)")
 
-weather_addon = BotAddon("Weather", "погода за окном (пока что только в Нижнем Новгороде)",
-                        [cmd_weather])
+def make_weather_addon():
+    return BotAddon("Weather", "погода за окном (пока что только в Нижнем Новгороде)",
+                        [cmd_weather()])

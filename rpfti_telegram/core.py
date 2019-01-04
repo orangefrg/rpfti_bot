@@ -93,6 +93,7 @@ class BotCore:
         self.TOKEN = settings["token"]
         self.bot = telebot.TeleBot(self.TOKEN, threaded=False)
         self.name = settings["name"]
+        self.bot.parent_entity_name = self.name
         try:
             db_bot = models["Bots"].objects.get(name__exact=self.name)
         except models["Bots"].DoesNotExist:
@@ -252,6 +253,7 @@ class BotCore:
                 "Trying to send message to an inactive chat or by inactive bot")
             return
         counter = 0
+        print("SENDING FROM {}".format(self.name))
         all_sent = []
         while counter <= GLOBAL_MSG_TRY_LIMIT:
             try:
@@ -395,6 +397,7 @@ class BotCore:
 
 
     def trigger_task(self, task, task_model):
+        print(task.addon, task.command)
         for a in self.addons:
             if a.name == task.addon:
                 for t in a.tasks:
@@ -500,6 +503,7 @@ class BotCore:
         # Receiving commands
         @self.bot.message_handler(commands=self.commands_cache)
         def process_commands(message):
+            print("COMMAND RECEIVED by {}".format(self.name))
             db_chat, db_user = self.check_user_and_chat(message)
             for ent in message.entities:
                 if ent.type == "bot_command":

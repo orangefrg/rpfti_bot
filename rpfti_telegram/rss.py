@@ -180,7 +180,9 @@ def task_art(task_f, task, task_model):
 def task_nudes(task_f, task, task_model):
     bot = task_f.addon.bot
     chat = task.chat
+    print("TASK NUDES")
     res = art_getter(3, rss_nudes)
+    print("RECEIVED NUDES")
     bot.send_message(chat, "Ежедневные картинки ню с deviantart.com")
     for r in res:
         payload = {}
@@ -202,7 +204,7 @@ def task_day(task_f, task, task_model):
     return True
 
 
-def subscribe(cmd, user, chat, message, cmd_args, command_name, command_description):
+def subscribe(cmd, user, chat, message, cmd_args, command_name, command_description, addon_name):
     bot = cmd.addon.bot
     time_match = re.search("(\d+):(\d+)", cmd_args)
     if not time_match:
@@ -224,7 +226,7 @@ def subscribe(cmd, user, chat, message, cmd_args, command_name, command_descript
     subs_date = datetime.datetime.utcnow().replace(hour=hours, minute=mins)
     if subs_date < datetime.datetime.utcnow():
         subs_date.replace(day=subs_date.day + 1)
-    if bot.add_task(subs_date, chat, "RSS", command_name, command_description, user):
+    if bot.add_task(subs_date, chat, addon_name, command_name, command_description, user):
         bot.send_message(chat, "Отлично, подписка настроена",
                          origin_user=user, reply_to=message.message_id)
     else:
@@ -232,47 +234,62 @@ def subscribe(cmd, user, chat, message, cmd_args, command_name, command_descript
                          origin_user=user, reply_to=message.message_id)
 
 def subscribe_art(cmd, user, chat, message, cmd_args):
-    subscribe(cmd, user, chat, message, cmd_args, "art", "Слуайная картинка с DeviantArt")
+    subscribe(cmd, user, chat, message, cmd_args, "art", "Слуайная картинка с DeviantArt", "RSS")
 
 def subscribe_nudes(cmd, user, chat, message, cmd_args):
-    subscribe(cmd, user, chat, message, cmd_args, "nudes", "Три картинки ню с DeviantArt")
+    subscribe(cmd, user, chat, message, cmd_args, "nudes", "Три картинки ню с DeviantArt", "RSS Nudes")
 
 def subscribe_day(cmd, user, chat, message, cmd_args):
-    subscribe(cmd, user, chat, message, cmd_args, "history_today", "Этот день в истории")
+    subscribe(cmd, user, chat, message, cmd_args, "history_today", "Этот день в истории", "RSS")
 
-cmd_drama = BotCommand(
+def cmd_drama():
+    return BotCommand(
     "drama", get_drama, help_text="случайная драма про женскую долю")
-cmd_news = BotCommand(
+def cmd_news():
+    return BotCommand(
     "news", get_news, help_text="три случайных новости")
-cmd_day = BotCommand(
+def cmd_day():
+    return BotCommand(
     "history_today", get_day, help_text="день в истории")
-cmd_art = BotCommand(
+def cmd_art():
+    return BotCommand(
     "art", get_art, help_text="популярная картинка с DeviantArt")
-cmd_nudes = BotCommand(
+def cmd_nudes():
+    return BotCommand(
     "nudes", get_nudes, help_text="картинка в стиле ню с DeviantArt")
 
-cmd_subscribe_art = BotCommand(
+def cmd_subscribe_art():
+    return BotCommand(
     "subscribe_art", subscribe_art,
     help_text="подписка на картинку с сайта deviantart каждый день. Время указывается в виде hh:mm в 24-часовом формате по гринвичу. " \
     "Например, /subscribe_art 7:15 для картинок в 10:15 по Московскому времени. Если подписка уже активна, она будет изменена или отменена "\
     "(в том случае, если время не указано).")
 
-cmd_subscribe_nudes = BotCommand(
+def cmd_subscribe_nudes():
+    return BotCommand(
     "subscribe_nudes", subscribe_nudes,
     help_text="подписка на три картинки с неодетыми людьми с сайта deviantart каждый день. Время указывается в виде hh:mm в 24-часовом формате по гринвичу. " \
-    "Например, /subscribe_art 7:15 для картинок в 10:15 по Московскому времени. Если подписка уже активна, она будет изменена или отменена "\
+    "Например, /subscribe_nudes 7:15 для картинок в 10:15 по Московскому времени. Если подписка уже активна, она будет изменена или отменена "\
     "(в том случае, если время не указано).")
 
-cmd_subscribe_day = BotCommand(
+def cmd_subscribe_day():
+    return BotCommand(
     "subscribe_history_today", subscribe_day,
     help_text="подписка на каждый день в истории по материалам википедии. Время указывается в виде hh:mm в 24-часовом формате по гринвичу. " \
-    "Например, /subscribe_art 7:15 для картинок в 10:15 по Московскому времени. Если подписка уже активна, она будет изменена или отменена "\
+    "Например, /subscribe_history_today 7:15 для картинок в 10:15 по Московскому времени. Если подписка уже активна, она будет изменена или отменена "\
     "(в том случае, если время не указано).")
 
 
-tsk_art = BotTask("art", task_art)
-tsk_nudes = BotTask("nudes", task_nudes)
-tsk_day = BotTask("history_today", task_day)
-rss_addon = BotAddon("RSS", "работа с RSS",
-                     [cmd_news, cmd_day, cmd_art, cmd_nudes, cmd_drama, cmd_subscribe_art,
-                      cmd_subscribe_nudes, cmd_subscribe_day], tasks=[tsk_art, tsk_nudes, tsk_day])
+def tsk_art():
+    return BotTask("art", task_art)
+def tsk_nudes():
+    return BotTask("nudes", task_nudes)
+def tsk_day():
+    return BotTask("history_today", task_day)
+def make_rss_info_addon():
+    return BotAddon("RSS", "работа с RSS",
+                     [cmd_news(), cmd_day(), cmd_art(), cmd_drama(), cmd_subscribe_art(),
+                      cmd_subscribe_day()], tasks=[tsk_art(), tsk_day()])
+def make_rss_nudes_addon():
+    return BotAddon("RSS Nudes", "Голые люди с девиантарта",
+                     [cmd_nudes(), cmd_subscribe_nudes()], tasks=[tsk_nudes()])

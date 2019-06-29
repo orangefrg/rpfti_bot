@@ -40,10 +40,13 @@ def tourette_word(task_f, task, task_model):
     bot.reset_task(task)
     return True
 
-cmd_subscribe_tourette = BotCommand(
+def cmd_subscribe_tourette():
+    return BotCommand(
     "tourette", subscribe, help_text="включение режима случайных матюков")
-tsk_tourette = BotTask("random_tourette", tourette_word)
-tourette_addon = BotAddon("Tourette", "Ругань",
-                     [cmd_subscribe_tourette], tasks=[tsk_tourette])
+def tsk_tourette():
+    return  BotTask("random_tourette", tourette_word)
+def make_tourette_addon():
+    return BotAddon("Tourette", "Ругань",
+                     [cmd_subscribe_tourette()], tasks=[tsk_tourette()])
 
 words = _loadwords()

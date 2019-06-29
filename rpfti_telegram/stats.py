@@ -71,11 +71,14 @@ def get_statistics(cmd, user, chat, message, cmd_args):
                                reply_to=message.message_id)
 
 
-cmd_get_stats = BotCommand(
+def cmd_get_stats():
+    return BotCommand(
     "get_stats", get_statistics, help_text="запрос статистики",
     acceptable_roles=["ADMIN"])
-cmd_get_summary = BotCommand(
+def cmd_get_summary():
+    return BotCommand(
     "get_summary", get_summary, help_text="запрос сводки",
     acceptable_roles=["ADMIN"])
-stats_addon = BotAddon("Stats", "статистика",
-                       [cmd_get_stats, cmd_get_summary])
+def make_stats_addon():
+    return BotAddon("Stats", "статистика",
+                       [cmd_get_stats(), cmd_get_summary()])

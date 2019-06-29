@@ -10,6 +10,7 @@ import time
 import os
 import re
 import random
+import json
 from telebot import types
 from .namez import get_random_name
 import datetime
@@ -74,6 +75,29 @@ prepositions = [
     ("согласно", "datv")
 ]
 
+companies = [
+    "ООО",
+    "АО",
+    "ПАО"
+]
+
+company_forms = [
+    """{adj,noun}""",
+    """{noun}""",
+    """{noun} {prepos,noun}""",
+    """{name} {prepos,noun}""",
+    """{adj} {name}""",
+    """{name} и {name}""",
+    """{name} и сыновья""",
+    """{noun} - {noun_case:datv}""",
+    """{adj}""",
+    """70-летия {noun_case:gent}""",
+    """Вечный {noun_case:gent}""",
+    """{noun} Интернешнл""",
+    """{noun} Трейдинг""",
+    """{noun} Кэпитал"""
+]
+
 separators = [" и ",
               ". Мы ещё называем это ",
               ", к тому же ещё и ",
@@ -108,18 +132,28 @@ big_arr = {}
 
 morph = pymorphy2.MorphAnalyzer()
 
+professions = {}
+
 def loadwords():
     global big_arr
     global words_adj
+    global professions
     path = os.path.dirname(os.path.abspath(__file__))
     f_male = open(path + "/words/dict.male")
     f_female = open(path + "/words/dict.female")
     f_indef = open(path + "/words/dict.indef")
     f_adj = open(path + "/words/dict.adj")
+    f_prof = open(path + "/words/professions.json")
     words_male = f_male.readlines()
     words_female = f_female.readlines()
     words_indef = f_indef.readlines()
     words_adj = f_adj.readlines()
+    professions = json.load(f_prof)
+    f_male.close()
+    f_female.close()
+    f_indef.close()
+    f_adj.close()
+    f_prof.close()
     big_arr = {'male': words_male,
                'female': words_female, 'indef': words_indef}
     logging.info('''Loaded {} male, {} female,
@@ -303,6 +337,25 @@ def dreamteam(cmd, user, chat, message, cmd_args):
     out_str += "\nНападающие: "
     for i in range(2):
         out_str += "{}, ".format(get_random_name())
+    bot = cmd.addon.bot
+    bot.send_message(chat, out_str, origin_user=user,
+                     markup=apply_like_markup(),
+                     reply_to=message.message_id)
+
+
+def get_random_profession():
+    profession = professions[random.choice(list(professions.keys()))]
+    templ = parse_form(random.choice(company_forms))
+    c_type = random.choice(companies)
+    c_name = make_string_from_template(templ)
+    c_name = c_name[0].upper() + c_name[1:]
+    print(c_type, c_name)
+    outstr = "{} в {} \"{}\"".format(profession, c_type, c_name)
+    return outstr
+
+
+def my_profession(cmd, user, chat, message, cmd_args):
+    out_str = "Твоя психологическая профессия:\n{}".format(get_random_profession())
     bot = cmd.addon.bot
     bot.send_message(chat, out_str, origin_user=user,
                      markup=apply_like_markup(),
@@ -563,24 +616,37 @@ def whoami_reply_handler(addon, db_context, context, user, chat, message):
 
 loadwords()
 
-cmd_noporn = BotCommand(
+def cmd_noporn():
+    return BotCommand(
     "x", antiporn, help_text="скрыть плохую картинку стикерами и сообщениями")
-cmd_whoami = BotCommand(
+def cmd_whoami():
+    return BotCommand(
     "whoami", whoami, help_text="познать себя")
-cmd_dreamteam = BotCommand(
+def cmd_my_profession():
+    return BotCommand(
+    "myprof", my_profession, help_text="моя психологическая профессия"
+)
+def cmd_dreamteam():
+    return BotCommand(
     "dreamteam", dreamteam, help_text="составить свою команду мечты")
-cmd_get_liked = BotCommand(
+def cmd_get_liked():
+    return BotCommand(
     "get_liked", get_liked, help_text="получить список понравившегося")
-cmd_delete_liked = BotCommand(
+def cmd_delete_liked():
+    return BotCommand(
     "delete_liked", delete_liked, help_text="удалить определённое понравившееся сообщение")
-cmd_clear_liked = BotCommand(
+def cmd_clear_liked():
+    return BotCommand(
     "clear_liked", clear_liked, help_text="очистить список понравившегося")
-cmd_acronym = BotCommand(
+def cmd_acronym():
+    return BotCommand(
     "acr", translate_acronym, help_text="расшифровать аббревиатуру")
 
-cb_like = BotCallback("set_like", like_callback)
+def cb_like():
+    return BotCallback("set_like", like_callback)
 
-noporn_addon = BotAddon("NoPorn", "познание себя через отказ от порно",
-                        [cmd_noporn, cmd_whoami, cmd_dreamteam, cmd_acronym,
-                         cmd_get_liked, cmd_delete_liked,
-                         cmd_clear_liked], [cb_like], reply_handler=whoami_reply_handler)
+def make_noporn_addon():
+    return BotAddon("NoPorn", "познание себя через отказ от порно",
+                        [cmd_noporn(), cmd_whoami(), cmd_my_profession(), cmd_dreamteam(), cmd_acronym(),
+                         cmd_get_liked(), cmd_delete_liked(),
+                         cmd_clear_liked()], [cb_like()], reply_handler=whoami_reply_handler)

@@ -63,8 +63,10 @@ def get_usd_eur(cmd, user, chat, message, cmd_args):
     bot.send_message(chat, txt, origin_user=user,
                     reply_to=message.message_id)
 
-cmd_usd_eur = BotCommand(
+def cmd_usd_eur():
+    return BotCommand(
     "currencies", get_usd_eur, help_text="Текущий курс основных валют к рублю ЦБ РФ")
 
-cbrf_addon = BotAddon("CBRF", "курсы валют ЦБ РФ",
-                        [cmd_usd_eur])
+def make_cbrf_addon():
+    return BotAddon("CBRF", "курсы валют ЦБ РФ",
+                        [cmd_usd_eur()])

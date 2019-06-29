@@ -93,6 +93,7 @@ def stop_bot(cmd, user, chat, message, cmd_args):
 
 def start_global(cmd, user, chat, message, cmd_args):
     bot = cmd.addon.bot
+    print("START GLOBAL FROM {}".format(bot.name))
     models = bot.models
     db_bot = models["Bots"].objects.get(name=bot.name)
     if db_bot.is_active:
@@ -161,33 +162,44 @@ def disable_tasks(cmd, user, chat, message, cmd_args):
 
 
 
-cmd_start = BotCommand("start", start_bot,
+def cmd_start():
+    return BotCommand("start", start_bot,
                        help_text="запустить бота для данного чата")
-cmd_stop = BotCommand("stop", stop_bot,
+def cmd_stop():
+    return BotCommand("stop", stop_bot,
                       help_text="отключить бота для данного чата")
-cmd_start_global = BotCommand("start_g", start_global,
+def cmd_start_global():
+    return BotCommand("start_g", start_global,
                               acceptable_roles=["ADMIN"],
                               help_text="включить бота глобально")
-cmd_stop_global = BotCommand("stop_g", stop_global,
+def cmd_stop_global():
+    return BotCommand("stop_g", stop_global,
                              acceptable_roles=["ADMIN"],
                              help_text="отключить бота глобально")
-cmd_help = BotCommand("help", get_help,
+def cmd_help():
+    return BotCommand("help", get_help,
                       help_text="вывести это сообщение")
-cmd_start_hb = BotCommand("start_hb", enable_heartbeat,
+def cmd_start_hb():
+    return BotCommand("start_hb", enable_heartbeat,
                               acceptable_roles=["ADMIN"],
                               help_text="enable heartbeat")
-cmd_stop_hb = BotCommand("stop_hb", disable_heartbeat,
+def cmd_stop_hb():
+    return BotCommand("stop_hb", disable_heartbeat,
                               acceptable_roles=["ADMIN"],
                               help_text="disable heartbeat")
-cmd_clear_tasks = BotCommand("clear_tasks", disable_tasks,
+def cmd_clear_tasks():
+    return BotCommand("clear_tasks", disable_tasks,
                               acceptable_roles=["ADMIN"],
                               help_text="очистить планировщик для данного чата")
 
-tsk_heartbeat = BotTask("heartbeat", heartbeat_task)
+def tsk_heartbeat():
+    return BotTask("heartbeat", heartbeat_task)
 
 
-core_addon = BotAddon("Main", "основное управление ботом",
-                      [cmd_start, cmd_stop,
-                       cmd_start_global, cmd_stop_global,
-                       cmd_help, cmd_start_hb, cmd_stop_hb,
-                       cmd_clear_tasks], tasks=[tsk_heartbeat])
+def make_core_addon():
+    return BotAddon("Main", "основное управление ботом",
+                      [cmd_start(), cmd_stop(),
+                       cmd_start_global(), cmd_stop_global(),
+                       cmd_help(), cmd_start_hb(), cmd_stop_hb(),
+                       cmd_clear_tasks()], tasks=[tsk_heartbeat()])
+

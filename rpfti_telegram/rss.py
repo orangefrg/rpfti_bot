@@ -12,7 +12,7 @@ from .rss_wiki import read_todays_events
 rss_art = "https://backend.deviantart.com/rss.xml?q=boost%3Apopular+max_age%3A72h+in%3Aphotography&type=deviation"
 
 rss_nudes = "https://backend.deviantart.com/rss.xml?q=boost%3Apopular+max_age%3A72h"\
-            "+in%3Aphotography%2Fpeople%2Fnude&type=deviation"
+            "+in%3Aphotography+nude+erotic&type=deviation"
 
 rss_filter = "https://backend.deviantart.com/rss.xml?q=boost%3Apopular+max_age%3A72h%FILTER%&type=deviation"
 

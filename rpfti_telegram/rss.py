@@ -1,6 +1,5 @@
 import feedparser
 import requests
-import json
 import rpfti.shared_config
 import random
 import re
@@ -10,35 +9,38 @@ from .core_addon import BotCommand, BotAddon, BotTask
 from .rss_wiki import read_todays_events
 
 rss_art = "https://backend.deviantart.com/rss.xml?q=boost%3Apopular+max_age%3A72h+in%3Aphotography&type=deviation"
-
 rss_nudes = "https://backend.deviantart.com/rss.xml?q=boost%3Apopular+max_age%3A72h"\
             "+in%3Aphotography+nude+erotic&type=deviation"
-
 rss_filter = "https://backend.deviantart.com/rss.xml?q=boost%3Apopular+max_age%3A72h%FILTER%&type=deviation"
-
-_api_url = "https://www.googleapis.com/urlshortener/v1/url?key={}".format(
-    rpfti.shared_config.GOO_GL)
-
-api_url = "https://api-ssl.bitly.com/v4/shorten"
-
-headers = {'content-type': 'application/json'}
-
-rss_list = ["https://news.yandex.ru/Tajikistan/index.rss",
-            "http://breakingmad.me/ru/rss",
-            "http://batenka.ru/rss/",
-            "http://orthodoxy.cafe/index.php?PHPSESSID=ssfp967ein7mpt6dklev0ko1b6&action=.xml;board=65;type=rss",
-            "http://orthodoxy.cafe/index.php?PHPSESSID=ssfp967ein7mpt6dklev0ko1b6&action=.xml;board=66;type=rss",
-            "http://ren.tv/export/feed.xml",
+rss_list = [
+    "https://naked-science.ru/?yandex_feed=news",
+    "https://3dnews.ru/news/rss/",
+    "https://3dnews.ru/auto/rss/",
+    "https://3dnews.ru/software/rss/",
+    "https://www.securitylab.ru/_services/export/rss/",
+    "https://www.ixbt.com/export/news.rss",
+    "https://www.ixbt.com/export/articles.rss",
+    "http://feeds.feedburner.com/drivenet"
             ]
-
-drama_list = ["https://www.galya.ru/sitemap/rss20export.xml",
-              "http://www.woman.ru/forum/rss/"]
+api_url = "https://api.short.io/links"
+drama_list = [
+    "https://www.galya.ru/sitemap/rss20export.xml",
+    "http://www.woman.ru/forum/rss/"
+    ]
 
 
 def make_short(url):
-    payload = {"long_url": url, "group_guid": rpfti.shared_config.BIT_LY_GROUP}
-    r = requests.post(api_url, json=payload, headers={"Authorization": "Bearer {}".format(rpfti.shared_config.BIT_LY)})
-    return r.json()["link"]
+    headers = {
+        "accept": "application/json",
+        "content-type": "application/json",
+        "Authorization": rpfti.shared_config.SHORT_IO
+    }
+    payload = {
+        "originalURL": url,
+        "domain": rpfti.shared_config.SHORT_IO_DOMAIN
+    }
+    r = requests.post(api_url, json=payload, headers=headers)
+    return r.json()["shortURL"]
 
 
 def get_drama(cmd, user, chat, message, cmd_args):

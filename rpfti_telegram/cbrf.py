@@ -56,8 +56,20 @@ def get_usd_eur(cmd, user, chat, message, cmd_args):
             "display": "🇪🇺"
         },
         {
-            "code": "RON",
-            "display": "🇹🇩"
+            "code": "UZS",
+            "display": "🇺🇿"
+        },
+        {
+            "code": "TRY",
+            "display": "🇹🇷"
+        },
+        {
+            "code": "KZT",
+            "display": "🇰🇿"
+        },
+        {
+            "code": "AMD",
+            "display": "🇦🇲"
         }
     ])
     bot.send_message(chat, txt, origin_user=user,

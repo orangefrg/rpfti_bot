@@ -112,7 +112,7 @@ class RpftiConfig(AppConfig):
         roles["o_range"] = "ADMIN"
 
         wai_addons = [make_core_addon(), make_noporn_addon(), make_stats_addon()]
-        info_addons = [make_core_addon(), make_stats_addon(), make_rss_info_addon(), make_weather_addon(), make_cbrf_addon()]
+        info_addons = [make_core_addon(), make_stats_addon(), make_rss_info_addon(), make_cbrf_addon()]
         amoral_addons = [make_core_addon(), make_stats_addon(), make_rss_nudes_addon(), make_tourette_addon()]
         global whoamibot
         global infobot

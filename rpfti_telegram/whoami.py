@@ -12,7 +12,7 @@ import re
 import random
 import json
 from telebot import types
-from .namez import get_random_name
+from .namez import get_random_name, genders
 import datetime
 import pymorphy2
 
@@ -86,13 +86,16 @@ company_forms = [
     """{noun}""",
     """{noun} {prepos,noun}""",
     """{name} {prepos,noun}""",
-    """{adj} {name}""",
+    """{adj,name}""",
     """{name} и {name}""",
     """{name} и сыновья""",
     """{noun} - {noun_case:datv}""",
     """{adj}""",
     """70-летия {noun_case:gent}""",
-    """Вечный {noun_case:gent}""",
+    """Вечный {noun}""",
+    """{noun} имени {adj_case:gent,noun_case:gent}""",
+    """{noun} имени {adj_case:gent,name_case:gent}""",
+    """{noun} {adj_case:gent,noun_case:gent}""",
     """{noun} Интернешнл""",
     """{noun} Трейдинг""",
     """{noun} Кэпитал"""
@@ -109,8 +112,8 @@ separators = [" и ",
               "? Нет, брось, ты - ",
               ", что следует из того, что ты ",
               ", а вчера с утра ты скорее ",
-              ". Это нормально для того, чьё имя - ",
-              ", ахаха, это как ", ", но мы все зовём тебя "]
+              ", ахаха, это как ",
+              ", но мы все зовём тебя "]
               
 whoami_forms = [
     """{adj,noun} {prepos,adj,noun}""",
@@ -120,8 +123,22 @@ whoami_forms = [
     """{noun} и {noun}!""",
     """{noun} по имени {name}""",
     """{adj,noun} по имени {name}""",
-    """{name}{connect}{adj,noun}!"""
+    """{name}{connect}{adj,noun}!""",
+    """{name_gender:male}, но в душе — {adj_gender:female,name_gender:female}"""
 ]
+
+morphy_genders = {
+    genders.MALE: "masc",
+    genders.FEMALE: "femn",
+    genders.INDEF: "neut"
+}
+
+opt_genders = {
+    "rand": genders.RANDOM,
+    "male": genders.MALE,
+    "female": genders.FEMALE,
+    "indef": genders.INDEF
+}
 
 MAX_PHRASES = 2
 NOPORN_PAIRS = 6
@@ -154,37 +171,35 @@ def loadwords():
     f_indef.close()
     f_adj.close()
     f_prof.close()
-    big_arr = {'male': words_male,
-               'female': words_female, 'indef': words_indef}
+    big_arr = {genders.MALE: words_male,
+               genders.FEMALE: words_female, genders.INDEF: words_indef}
     logging.info('''Loaded {} male, {} female,
                    {} indef nouns and {} adjectives'''.format(
                  len(words_male), len(words_female),
                  len(words_indef), len(words_adj)))
 
-def gender_change(word, gender):
-    if gender == 'female':
-        word = re.sub("(\S+)([с|н])ий$", "\g<1>\g<2>яя", word)
-        word = re.sub("(\S+)([и|ы|о]й)$", "\g<1>ая", word)
-        word = re.sub("(\S+)([н|в])$", "\g<1>\g<2>а", word)
-        word = re.sub("(\S+)([ий|ый|ой]ся)$", "\g<1>аяся", word)
-    elif gender == 'indef':
-        word = re.sub("(\S+)([с|н])ий$", "\g<1>\g<2>ее", word)
-        word = re.sub("(\S+)([и|ы|о]й)$", "\g<1>ое", word)
-        word = re.sub("(\S+)([н|в])$", "\g<1>\g<2>о", word)
-        word = re.sub("(\S+)([ий|ый|ой]ся)$", "\g<1>ееся", word)
-    return word
 
-
-def get_random_noun():
-    key = random.choice(list(big_arr.keys()))
+def get_random_noun(gender=genders.RANDOM):
+    if gender == genders.RANDOM or gender is None:
+        key = random.choice(list(big_arr.keys()))
+    else:
+        key = gender
     selected_words = big_arr[key]
     noun = random.choice(selected_words)
     return key, noun.strip()
 
 
-def get_random_adj(gender):
-    adj = gender_change(random.choice(words_adj), gender)
-    return adj.strip()
+def get_random_adj(gender=genders.RANDOM):
+    if gender == genders.RANDOM or gender is None:
+        gender = random.choice([genders.INDEF, genders.FEMALE, genders.MALE])
+    adj = random.choice(words_adj).strip()
+    if gender in [genders.FEMALE, genders.INDEF]:
+        prs_all = morph.parse(adj)
+        prs = prs_all[0]
+        mgender = morphy_genders[gender]
+        infl = prs.inflect({mgender})
+        adj = infl.word
+    return adj
 
 def parse_form(form):
     templ = re.compile("\{([\w,_:]+)\}")
@@ -225,8 +240,13 @@ def make_string_from_template(template):
             for opt in options:
                 if opt["name"] == "noun":
                     current_case = None
+                    if "gender" in opt:
+                        gender_word = opt["gender"]
+                        gender = opt_genders[gender_word]
+                        if gender == genders.INDEF:
+                            gender = genders.MALE
                     if not "value" in opt:
-                        gender, opt["value"] = get_random_noun()
+                        gender, opt["value"] = get_random_noun(gender)
                     if "case" in opt:
                         current_case = opt["case"]
                     elif case is not None:
@@ -237,9 +257,10 @@ def make_string_from_template(template):
                 elif opt["name"] == "adj":
                     current_case = None
                     if not "value" in opt:
-                        opt["value"] = get_random_adj("male")
-                    if gender in ["female", "indef"]:
-                        opt["value"] = gender_change(opt["value"], gender)
+                        opt["value"] = get_random_adj()
+                    if gender in [genders.INDEF, genders.FEMALE]:
+                        prs = morph.parse(opt["value"])[0]
+                        opt["value"] = prs.inflect({morphy_genders[gender]}).word
                     if "case" in opt:
                         current_case = opt["case"]
                     elif case is not None:
@@ -256,7 +277,17 @@ def make_string_from_template(template):
                     if not "value" in opt:
                         opt["value"] = random.choice(separators)
                 elif opt["name"] == "name":
-                    opt["value"] = get_random_name()
+                    current_case = None
+                    if "case" in opt:
+                        current_case = opt["case"]
+                    gender, opt["value"] = get_random_name(gender=gender, words=big_arr[genders.MALE] +
+                                                            big_arr[genders.FEMALE] +
+                                                            big_arr[genders.INDEF])
+                    if current_case:
+                        split_name = opt["value"].split(" ")
+                        first_name = morph.parse(split_name[0])[0].inflect({current_case}).word
+                        last_name = morph.parse(split_name[1])[0].inflect({current_case}).word
+                        opt["value"] = "{} {}".format(first_name, last_name)
         options_string = " ".join([a["value"] for a in options])
         out_string += options_string
     return out_string
@@ -326,17 +357,17 @@ def whoami(cmd, user, chat, message, cmd_args):
 
 def dreamteam(cmd, user, chat, message, cmd_args):
     out_str = "Твоя команда мечты:\n\n"
-    out_str += "Тренер: {}\n".format(get_random_name())
-    out_str += "Вратарь: {}\n".format(get_random_name())
+    out_str += "Тренер: {}\n".format(get_random_name()[1])
+    out_str += "Вратарь: {}\n".format(get_random_name()[1])
     out_str += "Защитники: "
     for i in range(4):
-        out_str += "{}, ".format(get_random_name())
+        out_str += "{}, ".format(get_random_name()[1])
     out_str += "\nПолузащитники: "
     for i in range(4):
-        out_str += "{}, ".format(get_random_name())
+        out_str += "{}, ".format(get_random_name()[1])
     out_str += "\nНападающие: "
     for i in range(2):
-        out_str += "{}, ".format(get_random_name())
+        out_str += "{}, ".format(get_random_name()[1])
     bot = cmd.addon.bot
     bot.send_message(chat, out_str, origin_user=user,
                      markup=apply_like_markup(),
@@ -349,7 +380,6 @@ def get_random_profession():
     c_type = random.choice(companies)
     c_name = make_string_from_template(templ)
     c_name = c_name[0].upper() + c_name[1:]
-    print(c_type, c_name)
     outstr = "{} в {} \"{}\"".format(profession, c_type, c_name)
     return outstr
 
@@ -391,10 +421,6 @@ def get_acronym_definition_noun(acronym_part):
         for gender in big_arr:
             for word in big_arr[gender]:
                 if re.match("{}(.+)".format(acronym_part), word):
-                    if len(word)==1:
-                        print(word)
-                        print(word)
-                        print(word)
                     matching_words.append((word, gender))
         cached_acronyms[acronym_part] = matching_words
     if len(matching_words) == 0:
@@ -416,7 +442,8 @@ def get_acronym_definition_adj(acronym_part, gender):
         cached_acronyms_adj[acronym_part] = matching_words
     if len(matching_words) == 0:
         return None
-    return [gender_change(w, gender) for w in matching_words]
+    word = random.choice(matching_words).strip()
+    return morph.parse(word)[0].inflect({morphy_genders[gender]}).word
 
 
 def get_acronym_as_motto(acronym_parts):
@@ -466,8 +493,8 @@ def get_acronym_standard(acronym_parts):
             acronym_definition.append(selection[0].strip() + ".")
             last_gender = selection[1]
         elif scheme_part[1] == "adj":
-            matching_words = get_acronym_definition_adj(scheme_part[0], last_gender)
-            acronym_definition.append(random.choice(matching_words).strip())
+            matching_word = get_acronym_definition_adj(scheme_part[0], last_gender)
+            acronym_definition.append(matching_word)
     out_str = " ".join(reversed(acronym_definition))
     out_str = out_str[0].upper() + out_str[1:]
     return out_str

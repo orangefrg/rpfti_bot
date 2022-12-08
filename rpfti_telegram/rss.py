@@ -123,7 +123,7 @@ def art_getter_adult(count=1, url=rss_nudes, offset_step=60, steps=15):
     for ent in entries:
         pht = ent["media_content"][0]["url"]
         author_link = ent["link"]
-        slink = "SHORTLINK"
+        slink = make_short(pht)
         res.append((ent["title"], pht, slink, author_link))
     return res
 
@@ -194,17 +194,21 @@ def task_nudes(task_f, task, task_model):
     bot = task_f.addon.bot
     chat = task.chat
     print("TASK NUDES")
-    res = art_getter_adult(3, rss_nudes)
-    print("RECEIVED NUDES")
-    bot.send_message(chat, "Ежедневные картинки ню с deviantart.com")
-    for r in res:
-        payload = {}
-        payload["PHOTO"] = {}
-        payload["PHOTO"]["title"] = "{} (картинка: {}, страница: {})".format(r[0], r[2], r[3])
-        payload["PHOTO"]["file"] = r[1]
-        bot.send_message(chat, payload=payload,
-                         disable_preview=True)
     bot.reset_task(task)
+    try:
+        res = art_getter_adult(3, rss_nudes)
+        print("RECEIVED NUDES")
+        bot.send_message(chat, "Ежедневные картинки ню с deviantart.com")
+        for r in res:
+            payload = {}
+            payload["PHOTO"] = {}
+            payload["PHOTO"]["title"] = "{} (картинка: {}, страница: {})".format(r[0], r[2], r[3])
+            payload["PHOTO"]["file"] = r[1]
+            bot.send_message(chat, payload=payload,
+                            disable_preview=True)
+    except:
+        print("NUDES FETCH ERROR")
+        bot.reset_task(task, new_time=datetime.datetime.utcnow() + datetime.timedelta(minutes=1))
     return True
 
 

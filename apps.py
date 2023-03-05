@@ -62,8 +62,9 @@ class RpftiConfig(AppConfig):
         from rpfti.rpfti_telegram.stats import make_stats_addon
         from rpfti.rpfti_telegram.rss import make_rss_info_addon, make_rss_nudes_addon
         from rpfti.rpfti_telegram.tourette import make_tourette_addon
-        from rpfti.rpfti_telegram.datacon_weather import make_weather_addon
+#       from rpfti.rpfti_telegram.datacon_weather import make_weather_addon
         from rpfti.rpfti_telegram.cbrf import make_cbrf_addon
+        from rpfti.rpfti_telegram.environment import make_air_addon
         from rpfti.models import Bot, TelegramUser, TelegramChat
         from rpfti.models import Message, Like, ScheduledTask, TouretteUser
         from rpfti.models import Context
@@ -111,15 +112,30 @@ class RpftiConfig(AppConfig):
         roles = {}
         roles["o_range"] = "ADMIN"
 
-        wai_addons = [make_core_addon(), make_noporn_addon(), make_stats_addon()]
-        info_addons = [make_core_addon(), make_stats_addon(), make_rss_info_addon(), make_cbrf_addon()]
-        amoral_addons = [make_core_addon(), make_stats_addon(), make_rss_nudes_addon(), make_tourette_addon()]
+        wai_addons = [make_core_addon(),
+                      make_noporn_addon(),
+                      make_stats_addon()]
+        info_addons = [make_core_addon(),
+                       make_stats_addon(),
+                       make_rss_info_addon(),
+                       make_cbrf_addon(),
+                       make_air_addon()]
+        amoral_addons = [make_core_addon(),
+                         make_stats_addon(),
+                         make_rss_nudes_addon(),
+                         make_tourette_addon()]
         global whoamibot
         global infobot
         global amoralbot
-        whoamibot = self.prepare_bot(BotCore, models, wai_settings, roles, wai_addons)
-        infobot = self.prepare_bot(BotCore, models, infobot_settings, roles, info_addons)
-        amoralbot = self.prepare_bot(BotCore, models, amoral_settings, roles, amoral_addons)
+        whoamibot = self.prepare_bot(BotCore, models,
+                                     wai_settings, roles,
+                                     wai_addons)
+        infobot = self.prepare_bot(BotCore, models,
+                                   infobot_settings, roles,
+                                   info_addons)
+        amoralbot = self.prepare_bot(BotCore, models,
+                                     amoral_settings, roles,
+                                     amoral_addons)
         print(whoamibot.name)
         print(infobot.name)
         print(amoralbot.name)

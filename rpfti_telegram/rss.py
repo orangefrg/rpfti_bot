@@ -5,6 +5,7 @@ import random
 import re
 import datetime
 import traceback
+import urllib
 from .core_addon import BotCommand, BotAddon, BotTask
 from .rss_wiki import read_todays_events
 
@@ -22,7 +23,6 @@ rss_list = [
     "https://www.ixbt.com/export/articles.rss",
     "http://feeds.feedburner.com/drivenet"
             ]
-api_url = "https://api.short.io/links"
 drama_list = [
     "https://www.galya.ru/sitemap/rss20export.xml",
     "http://www.woman.ru/forum/rss/"
@@ -30,17 +30,13 @@ drama_list = [
 
 
 def make_short(url):
-    headers = {
-        "accept": "application/json",
-        "content-type": "application/json",
-        "Authorization": rpfti.shared_config.SHORT_IO
-    }
-    payload = {
-        "originalURL": url,
-        "domain": rpfti.shared_config.SHORT_IO_DOMAIN
-    }
-    r = requests.post(api_url, json=payload, headers=headers)
-    return r.json()["shortURL"]
+    purl = urllib.parse.quote(url)
+    userDomain = "0"
+    r = requests.get("http://cutt.ly/api/api.php"
+                     "?key={}&short={}&userDomain={}".format(
+                            rpfti.shared_config.CUTTLY, purl, userDomain))
+    slink = r.json().get("url").get("shortLink")
+    return slink or "Не удалось создать короткую ссылку"
 
 
 def get_drama(cmd, user, chat, message, cmd_args):

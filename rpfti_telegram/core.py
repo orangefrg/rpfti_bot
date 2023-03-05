@@ -524,8 +524,13 @@ class BotCore:
             command.call(db_user, db_chat, message, args)
             return True
 
-        @self.bot.message_handler(func=lambda message: message.reply_to_message is not None and message.reply_to_message.from_user.id == self.db_bot.telegram_id)
+        @self.bot.message_handler(
+                func=lambda message:
+                message.reply_to_message is not None and
+                message.reply_to_message.from_user.id == self.db_bot.telegram_id,
+                content_types=["photo", "text", "location"])
         def process_reply(message):
+            print("PROCESSING REPLY")
             db_chat, db_user = self.check_user_and_chat(message)
             all_addons = self._get_addons_by_context(message.reply_to_message, db_user, db_chat)
             for a in all_addons:

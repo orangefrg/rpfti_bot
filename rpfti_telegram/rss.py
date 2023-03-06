@@ -10,8 +10,7 @@ from .core_addon import BotCommand, BotAddon, BotTask
 from .rss_wiki import read_todays_events
 
 rss_art = "https://backend.deviantart.com/rss.xml?q=boost%3Apopular+max_age%3A72h+in%3Aphotography&type=deviation"
-rss_nudes = "https://backend.deviantart.com/rss.xml?q=boost%3Apopular+max_age%3A72h"\
-            "+in%3Aphotography+nude+erotic&type=deviation"
+rss_nudes = "https://backend.deviantart.com/rss.xml?type=deviation&q=nude+erotic&order=14&offset="
 rss_filter = "https://backend.deviantart.com/rss.xml?q=boost%3Apopular+max_age%3A72h%FILTER%&type=deviation"
 rss_list = [
     "https://naked-science.ru/?yandex_feed=news",
@@ -111,6 +110,22 @@ def art_getter(count=1, url=rss_art):
         res.append((ent["title"], pht, slink, author_link))
     return res
 
+def art_getter_adult(count=1, url=rss_nudes, offset_step=60, steps=15):
+    all_entries = []
+    res = []
+    offset = 0
+    for _ in range(steps):
+        print(offset)
+        r = feedparser.parse(url + str(offset))
+        all_entries.extend([e for e in r["entries"] if e["rating"] == "adult"])
+        offset += offset_step
+    entries = random.choices(all_entries, k=count)
+    for ent in entries:
+        pht = ent["media_content"][0]["url"]
+        author_link = ent["link"]
+        slink = make_short(pht)
+        res.append((ent["title"], pht, slink, author_link))
+    return res
 
 def get_art(cmd, user, chat, message, cmd_args):
     bot = cmd.addon.bot
@@ -130,9 +145,9 @@ def get_art(cmd, user, chat, message, cmd_args):
             return
         payload = {}
         payload["PHOTO"] = {}
-        payload["PHOTO"]["title"] = "{} (страница: {})".format(res[0], res[3])
+        payload["PHOTO"]["title"] = "{}\n{} (страница: {})".format(res[2], res[0], res[3])
         payload["PHOTO"]["file"] = res[1]
-        bot.send_message(chat, res[2], origin_user=user, payload=payload,
+        bot.send_message(chat, origin_user=user, payload=payload,
                          disable_preview=True)
     except Exception as e:
         bot.send_message(
@@ -143,15 +158,15 @@ def get_art(cmd, user, chat, message, cmd_args):
 def get_nudes(cmd, user, chat, message, cmd_args):
     bot = cmd.addon.bot
     try:
-        res = art_getter(url=rss_nudes)[0]
+        res = art_getter_adult(1, rss_nudes, steps = 5)[0]
         if res is None:
             bot.send_message(chat, "Картинок не нашлось", origin_user=user)
             return
         payload = {}
         payload["PHOTO"] = {}
-        payload["PHOTO"]["title"] = "{} (страница: {})".format(res[0], res[3])
+        payload["PHOTO"]["title"] = "{}\n{} (страница: {})".format(res[2], res[0], res[3])
         payload["PHOTO"]["file"] = res[1]
-        bot.send_message(chat, res[2], origin_user=user, payload=payload,
+        bot.send_message(chat, origin_user=user, payload=payload,
                          disable_preview=True)
     except Exception as e:
         bot.send_message(
@@ -179,17 +194,21 @@ def task_nudes(task_f, task, task_model):
     bot = task_f.addon.bot
     chat = task.chat
     print("TASK NUDES")
-    res = art_getter(3, rss_nudes)
-    print("RECEIVED NUDES")
-    bot.send_message(chat, "Ежедневные картинки ню с deviantart.com")
-    for r in res:
-        payload = {}
-        payload["PHOTO"] = {}
-        payload["PHOTO"]["title"] = "{} (картинка: {}, страница: {})".format(r[0], r[2], r[3])
-        payload["PHOTO"]["file"] = r[1]
-        bot.send_message(chat, payload=payload,
-                         disable_preview=True)
     bot.reset_task(task)
+    try:
+        res = art_getter_adult(3, rss_nudes)
+        print("RECEIVED NUDES")
+        bot.send_message(chat, "Ежедневные картинки ню с deviantart.com")
+        for r in res:
+            payload = {}
+            payload["PHOTO"] = {}
+            payload["PHOTO"]["title"] = "{} (картинка: {}, страница: {})".format(r[0], r[2], r[3])
+            payload["PHOTO"]["file"] = r[1]
+            bot.send_message(chat, payload=payload,
+                            disable_preview=True)
+    except:
+        print("NUDES FETCH ERROR")
+        bot.reset_task(task, new_time=datetime.datetime.utcnow() + datetime.timedelta(minutes=1))
     return True
 
 
@@ -235,7 +254,7 @@ def subscribe_art(cmd, user, chat, message, cmd_args):
     subscribe(cmd, user, chat, message, cmd_args, "art", "Слуайная картинка с DeviantArt", "RSS")
 
 def subscribe_nudes(cmd, user, chat, message, cmd_args):
-    subscribe(cmd, user, chat, message, cmd_args, "nudes", "Три картинки ню с DeviantArt", "RSS Nudes")
+    subscribe(cmd, user, chat, message, cmd_args, "nudes", "Три картинки ню с DeviantArt", "RSS")
 
 def subscribe_day(cmd, user, chat, message, cmd_args):
     subscribe(cmd, user, chat, message, cmd_args, "history_today", "Этот день в истории", "RSS")

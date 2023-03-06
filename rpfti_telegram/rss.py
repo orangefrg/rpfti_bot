@@ -254,7 +254,7 @@ def subscribe_art(cmd, user, chat, message, cmd_args):
     subscribe(cmd, user, chat, message, cmd_args, "art", "Слуайная картинка с DeviantArt", "RSS")
 
 def subscribe_nudes(cmd, user, chat, message, cmd_args):
-    subscribe(cmd, user, chat, message, cmd_args, "nudes", "Три картинки ню с DeviantArt", "RSS Nudes")
+    subscribe(cmd, user, chat, message, cmd_args, "nudes", "Три картинки ню с DeviantArt", "RSS")
 
 def subscribe_day(cmd, user, chat, message, cmd_args):
     subscribe(cmd, user, chat, message, cmd_args, "history_today", "Этот день в истории", "RSS")

@@ -114,17 +114,17 @@ separators = [" и ",
               ", а вчера с утра ты скорее ",
               ", ахаха, это как ",
               ", но мы все зовём тебя "]
-              
+
 whoami_forms = [
-    """{adj,noun} {prepos,adj,noun}""",
-    """{adj,noun}{connect}{adj,noun}""",
-    """{adj,noun}: {noun}, {noun}, {noun}""",
-    """{noun}{connect}{noun} {adj_case:gent,noun_case:gent}""",
-    """{noun} и {noun}!""",
-    """{noun} по имени {name}""",
-    """{adj,noun} по имени {name}""",
-    """{name}{connect}{adj,noun}!""",
-    """{name_gender:male}, но в душе — {adj_gender:female,name_gender:female}"""
+  """{adj,noun} {prepos,adj,noun}""",
+  """{adj,noun}{connect}{adj,noun}""",
+  """{adj,noun}: {noun}, {noun}, {noun}""",
+  """{noun}{connect}{noun} {adj_case:gent,noun_case:gent}""",
+  """{noun} и {noun}!""",
+  """{noun} по имени {name}""",
+  """{adj,noun} по имени {name}""",
+  """{name}{connect}{adj,noun}!""",
+  """{name_gender:male}, но в душе — {adj_gender:female,name_gender:female}"""
 ]
 
 morphy_genders = {
@@ -150,6 +150,7 @@ big_arr = {}
 morph = pymorphy2.MorphAnalyzer()
 
 professions = {}
+
 
 def loadwords():
     global big_arr
@@ -201,6 +202,7 @@ def get_random_adj(gender=genders.RANDOM):
         adj = infl.word
     return adj
 
+
 def parse_form(form):
     templ = re.compile("\{([\w,_:]+)\}")
     template = []
@@ -231,6 +233,7 @@ def parse_form(form):
         }])
     return template
 
+
 def make_string_from_template(template):
     out_string = ""
     for options in template:
@@ -245,7 +248,7 @@ def make_string_from_template(template):
                         gender = opt_genders[gender_word]
                         if gender == genders.INDEF:
                             gender = genders.MALE
-                    if not "value" in opt:
+                    if "value" not in opt:
                         gender, opt["value"] = get_random_noun(gender)
                     if "case" in opt:
                         current_case = opt["case"]
@@ -256,11 +259,12 @@ def make_string_from_template(template):
                         opt["value"] = prs.inflect({current_case}).word
                 elif opt["name"] == "adj":
                     current_case = None
-                    if not "value" in opt:
+                    if "value" not in opt:
                         opt["value"] = get_random_adj()
                     if gender in [genders.INDEF, genders.FEMALE]:
                         prs = morph.parse(opt["value"])[0]
-                        opt["value"] = prs.inflect({morphy_genders[gender]}).word
+                        opt["value"] = prs.\
+                            inflect({morphy_genders[gender]}).word
                     if "case" in opt:
                         current_case = opt["case"]
                     elif case is not None:
@@ -269,28 +273,33 @@ def make_string_from_template(template):
                         prs = morph.parse(opt["value"])[0]
                         opt["value"] = prs.inflect({current_case}).word
                 elif opt["name"] == "prepos":
-                    if not "value" in opt:
+                    if "value" not in opt:
                         prep = random.choice(prepositions)
                         opt["value"] = prep[0]
                         case = prep[1]
                 elif opt["name"] == "connect":
-                    if not "value" in opt:
+                    if "value" not in opt:
                         opt["value"] = random.choice(separators)
                 elif opt["name"] == "name":
                     current_case = None
                     if "case" in opt:
                         current_case = opt["case"]
-                    gender, opt["value"] = get_random_name(gender=gender, words=big_arr[genders.MALE] +
-                                                            big_arr[genders.FEMALE] +
-                                                            big_arr[genders.INDEF])
+                    gender, opt["value"] = \
+                        get_random_name(gender=gender,
+                                        words=big_arr[genders.MALE] +
+                                        big_arr[genders.FEMALE] +
+                                        big_arr[genders.INDEF])
                     if current_case:
                         split_name = opt["value"].split(" ")
-                        first_name = morph.parse(split_name[0])[0].inflect({current_case}).word
-                        last_name = morph.parse(split_name[1])[0].inflect({current_case}).word
+                        first_name = morph.parse(split_name[0])[0].\
+                            inflect({current_case}).word
+                        last_name = morph.parse(split_name[1])[0].\
+                            inflect({current_case}).word
                         opt["value"] = "{} {}".format(first_name, last_name)
         options_string = " ".join([a["value"] for a in options])
         out_string += options_string
     return out_string
+
 
 def make_phrase(username):
     outstr = username + ", ты - "
@@ -340,7 +349,8 @@ def antiporn(cmd, user, chat, message, cmd_args):
 
 def apply_like_markup(likes=0):
     keyboard = types.InlineKeyboardMarkup()
-    text = "Нравится!" if likes == 0 else "Нравится! Отметок - {}".format(likes)
+    text = "Нравится!" if likes == 0 else "Нравится! Отметок - {}"\
+        .format(likes)
     callback_button = types.InlineKeyboardButton(
         text=text, callback_data="set_like")
     keyboard.add(callback_button)
@@ -351,8 +361,8 @@ def whoami(cmd, user, chat, message, cmd_args):
     bot = cmd.addon.bot
     txt = make_phrase(user.first_name)
     bot.send_message(chat, txt, origin_user=user,
-                    markup=apply_like_markup(),
-                    reply_to=message.message_id)
+                     markup=apply_like_markup(),
+                     reply_to=message.message_id)
 
 
 def dreamteam(cmd, user, chat, message, cmd_args):
@@ -385,7 +395,8 @@ def get_random_profession():
 
 
 def my_profession(cmd, user, chat, message, cmd_args):
-    out_str = "Твоя психологическая профессия:\n{}".format(get_random_profession())
+    out_str = "Твоя психологическая профессия:\n{}".\
+        format(get_random_profession())
     bot = cmd.addon.bot
     bot.send_message(chat, out_str, origin_user=user,
                      markup=apply_like_markup(),
@@ -489,11 +500,13 @@ def get_acronym_standard(acronym_parts):
                 return None
             selection = random.choice(matching_words)
             if len(acronym_definition) > 0:
-                acronym_definition[-1] = acronym_definition[-1][0].upper() + acronym_definition[-1][1:]
+                acronym_definition[-1] = acronym_definition[-1][0].upper() + \
+                    acronym_definition[-1][1:]
             acronym_definition.append(selection[0].strip() + ".")
             last_gender = selection[1]
         elif scheme_part[1] == "adj":
-            matching_word = get_acronym_definition_adj(scheme_part[0], last_gender)
+            matching_word = get_acronym_definition_adj(scheme_part[0],
+                                                       last_gender)
             acronym_definition.append(matching_word)
     out_str = " ".join(reversed(acronym_definition))
     out_str = out_str[0].upper() + out_str[1:]
@@ -521,7 +534,7 @@ def translate_acronym(cmd, user, chat, message, cmd_args):
     if len(cmd_args) == 0:
         txt = "Пришли аббревиатуру ответом на это сообщение"
         all_sent = bot.send_message(chat, txt, origin_user=user,
-                        reply_to=message.message_id)
+                                    reply_to=message.message_id)
         context = {
             "command": "acronym",
             "action": "request_reply"
@@ -529,16 +542,17 @@ def translate_acronym(cmd, user, chat, message, cmd_args):
         for a in all_sent:
             bot.keep_context(cmd.addon, context, a.message_id)
     elif len(cmd_args) > ACRONYM_LENGTH_LIMIT:
-        txt = "Слишком длинно. Больше {} символов пока нельзя".format(ACRONYM_LENGTH_LIMIT)
+        txt = "Слишком длинно. Больше {} символов пока нельзя".\
+            format(ACRONYM_LENGTH_LIMIT)
         bot.send_message(chat, txt, origin_user=user,
-                        reply_to=message.message_id)
+                         reply_to=message.message_id)
     else:
         txt, outcome = translate_acronym_worker(cmd_args)
         if outcome:
             markup = apply_like_markup()
         bot.send_message(chat, txt, origin_user=user,
-                        markup=markup,
-                        reply_to=message.message_id)
+                         markup=markup,
+                         reply_to=message.message_id)
 
 
 # Bot like callback
@@ -572,8 +586,8 @@ def get_liked(cmd, user, chat, message, cmd_args):
     if len(liked) > 0:
         out_str = "Вот, что тебе понравилось, {}:\n".format(user.first_name)
         n = 1
-        for l in liked:
-            out_str += "{}. {}\n".format(n, l.message.text)
+        for lmsg in liked:
+            out_str += "{}. {}\n".format(n, lmsg.message.text)
             n += 1
     else:
         out_str = "Нет понравившихся сообщений :("
@@ -601,7 +615,8 @@ def delete_liked(cmd, user, chat, message, cmd_args):
     number_match = re.search("(\d+)", cmd_args)
     if len(liked) > 0:
         if not number_match:
-            out_str = "Не понимаю, какое удалять. Нужно указать номер в явном виде." \
+            out_str = "Не понимаю, какое удалять. "\
+                      "Нужно указать номер в явном виде." \
                       "Например, \"/delete_liked 4\""
         else:
             number = int(number_match.group(1))
@@ -609,7 +624,8 @@ def delete_liked(cmd, user, chat, message, cmd_args):
                 liked[number - 1].delete()
                 out_str = "Удалено сообщение номер {}".format(number)
             else:
-                out_str = "Не получится удалить - понравилось всего {} сообщений".format(len(liked))
+                out_str = "Не получится удалить - "\
+                 "понравилось всего {} сообщений".format(len(liked))
 
     else:
         out_str = "Нечего удалять, эй"
@@ -631,49 +647,67 @@ def whoami_reply_handler(addon, db_context, context, user, chat, message):
                 elif len(message.text) == 0:
                     txt = "Текст что-то пустой"
                 elif len(message.text) > ACRONYM_LENGTH_LIMIT:
-                    txt = "Длинновато, пока что нужно менее {} символов".format(ACRONYM_LENGTH_LIMIT)
+                    txt = "Длинновато, пока что нужно менее {} символов".\
+                        format(ACRONYM_LENGTH_LIMIT)
                 else:
                     txt = translate_acronym_worker(message.text)
                     markup = apply_like_markup()
                 bot.send_message(chat, txt, origin_user=user,
-                                markup=markup,
-                                reply_to=message.message_id)
-                
-
+                                 markup=markup,
+                                 reply_to=message.message_id)
+            
 
 loadwords()
 
+
 def cmd_noporn():
-    return BotCommand(
-    "x", antiporn, help_text="скрыть плохую картинку стикерами и сообщениями")
+    return BotCommand("x", antiporn,
+                      help_text="скрыть плохую картинку "
+                      "стикерами и сообщениями")
+
+
 def cmd_whoami():
-    return BotCommand(
-    "whoami", whoami, help_text="познать себя")
+    return BotCommand("whoami", whoami, help_text="познать себя")
+
+
 def cmd_my_profession():
-    return BotCommand(
-    "myprof", my_profession, help_text="моя психологическая профессия"
-)
+    return BotCommand("myprof", my_profession,
+                      help_text="моя психологическая профессия")
+
+
 def cmd_dreamteam():
-    return BotCommand(
-    "dreamteam", dreamteam, help_text="составить свою команду мечты")
+    return BotCommand("dreamteam", dreamteam,
+                      help_text="составить свою команду мечты")
+
+
 def cmd_get_liked():
-    return BotCommand(
-    "get_liked", get_liked, help_text="получить список понравившегося")
+    return BotCommand("get_liked", get_liked,
+                      help_text="получить список понравившегося")
+
+
 def cmd_delete_liked():
-    return BotCommand(
-    "delete_liked", delete_liked, help_text="удалить определённое понравившееся сообщение")
+    return BotCommand("delete_liked", delete_liked,
+                      help_text="удалить определённое понравившееся сообщение")
+
+
 def cmd_clear_liked():
-    return BotCommand(
-    "clear_liked", clear_liked, help_text="очистить список понравившегося")
+    return BotCommand("clear_liked", clear_liked,
+                      help_text="очистить список понравившегося")
+
+
 def cmd_acronym():
-    return BotCommand(
-    "acr", translate_acronym, help_text="расшифровать аббревиатуру")
+    return BotCommand("acr", translate_acronym,
+                      help_text="расшифровать аббревиатуру")
+
 
 def cb_like():
     return BotCallback("set_like", like_callback)
 
+
 def make_noporn_addon():
     return BotAddon("NoPorn", "познание себя через отказ от порно",
-                        [cmd_noporn(), cmd_whoami(), cmd_my_profession(), cmd_dreamteam(), cmd_acronym(),
-                         cmd_get_liked(), cmd_delete_liked(),
-                         cmd_clear_liked()], [cb_like()], reply_handler=whoami_reply_handler)
+                    [cmd_noporn(), cmd_whoami(), cmd_my_profession(),
+                     cmd_dreamteam(), cmd_acronym(),
+                     cmd_get_liked(), cmd_delete_liked(),
+                     cmd_clear_liked()], [cb_like()],
+                    reply_handler=whoami_reply_handler)

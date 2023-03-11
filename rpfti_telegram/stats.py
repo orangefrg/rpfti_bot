@@ -10,7 +10,8 @@ def get_summary(cmd, user, chat, message, cmd_args):
     out_string = "Краткая сводка по боту\n"
 
     for b in bots.objects.all():
-        totaltime = datetime.datetime.utcnow() - b.start_time.replace(tzinfo=None)
+        totaltime = datetime.datetime.utcnow() - b.\
+            start_time.replace(tzinfo=None)
         out_string += "Бот {} (запущен {}, работает {})"\
             ", в статистике {} сообщений\n".format(
                 b.name, b.start_time, totaltime,
@@ -32,7 +33,8 @@ def get_statistics(cmd, user, chat, message, cmd_args):
     out_string = "Полная статистика\n\n"
 
     for b in bots.objects.all():
-        totaltime = datetime.datetime.utcnow() - b.start_time.replace(tzinfo=None)
+        totaltime = datetime.datetime.utcnow() - \
+            b.start_time.replace(tzinfo=None)
         out_string += "---Бот {}---\n(запущен {}, работает {})\n".format(
             b.name, b.start_time, totaltime)
         out_string += "ЧАТЫ:\n"
@@ -55,8 +57,10 @@ def get_statistics(cmd, user, chat, message, cmd_args):
             out_string += "|\tвсего {} сообщений\n|\n|".format(
                 messages.objects.filter(chat=c, bot=b).count())
             for t in tasks.objects.filter(chat=c, bot=b):
-                out_string += "|\t⏰ Задача: аддон {}, команда {}, сработает в {} (уже срабатывала {} раз)\n".format(
-                    t.addon, t.command, t.trigger_time, t.counter)
+                out_string += \
+                    "|\t⏰ Задача: аддон "
+                "{}, команда {}, сработает в {} (уже срабатывала {} раз)\n".\
+                    format(t.addon, t.command, t.trigger_time, t.counter)
             out_string += "---\n"
         out_string += "\nПользователи:\n"
         for u in users.objects.filter(bot=b):
@@ -72,13 +76,17 @@ def get_statistics(cmd, user, chat, message, cmd_args):
 
 
 def cmd_get_stats():
-    return BotCommand(
-    "get_stats", get_statistics, help_text="запрос статистики",
-    acceptable_roles=["ADMIN"])
+    return BotCommand("get_stats", get_statistics,
+                      help_text="запрос статистики",
+                      acceptable_roles=["ADMIN"])
+
+
 def cmd_get_summary():
-    return BotCommand(
-    "get_summary", get_summary, help_text="запрос сводки",
-    acceptable_roles=["ADMIN"])
+    return BotCommand("get_summary", get_summary,
+                      help_text="запрос сводки",
+                      acceptable_roles=["ADMIN"])
+
+
 def make_stats_addon():
     return BotAddon("Stats", "статистика",
-                       [cmd_get_stats(), cmd_get_summary()])
+                    [cmd_get_stats(), cmd_get_summary()])

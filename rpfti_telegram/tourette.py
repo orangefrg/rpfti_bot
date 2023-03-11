@@ -6,6 +6,7 @@ path = os.path.dirname(os.path.abspath(__file__))
 
 words = []
 
+
 def _loadwords():
     words_loaded = []
     with open(path + "/words/tourette") as w:
@@ -16,6 +17,7 @@ def _loadwords():
 def _get_word():
     return "{}!!!".format(random.choice(words).rstrip())
 
+
 def subscribe(cmd, db_user, db_chat, message, cmd_args):
     bot = cmd.addon.bot
     task = bot.get_task(db_chat, "Tourette", "random_tourette")
@@ -24,12 +26,13 @@ def subscribe(cmd, db_user, db_chat, message, cmd_args):
         bot.send_message(db_chat, "Больше не буду присылать случайные матюки",
                          origin_user=db_user, reply_to=message.message_id)
     else:
-        if bot.add_task(None, db_chat, "Tourette", "random_tourette", "Случайные матюки", db_user, random_reset=True):
+        if bot.add_task(None, db_chat, "Tourette", "random_tourette",
+                        "Случайные матюки", db_user, random_reset=True):
             bot.send_message(db_chat, "Буду присылать случайные матюки теперь",
-                            origin_user=db_user, reply_to=message.message_id)
+                             origin_user=db_user, reply_to=message.message_id)
         else:
             bot.send_message(db_chat, "Что-то пошло не так",
-                            origin_user=db_user, reply_to=message.message_id)
+                             origin_user=db_user, reply_to=message.message_id)
 
 
 def tourette_word(task_f, task, task_model):
@@ -40,13 +43,19 @@ def tourette_word(task_f, task, task_model):
     bot.reset_task(task)
     return True
 
+
 def cmd_subscribe_tourette():
-    return BotCommand(
-    "tourette", subscribe, help_text="включение режима случайных матюков")
+    return BotCommand("tourette", subscribe,
+                      help_text="включение режима случайных матюков")
+
+
 def tsk_tourette():
-    return  BotTask("random_tourette", tourette_word)
+    return BotTask("random_tourette", tourette_word)
+
+
 def make_tourette_addon():
     return BotAddon("Tourette", "Ругань",
-                     [cmd_subscribe_tourette()], tasks=[tsk_tourette()])
+                    [cmd_subscribe_tourette()], tasks=[tsk_tourette()])
+
 
 words = _loadwords()

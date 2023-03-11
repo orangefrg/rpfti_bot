@@ -9,9 +9,12 @@ import urllib
 from .core_addon import BotCommand, BotAddon, BotTask
 from .rss_wiki import read_todays_events
 
-rss_art = "https://backend.deviantart.com/rss.xml?q=boost%3Apopular+max_age%3A72h+in%3Aphotography&type=deviation"
-rss_nudes = "https://backend.deviantart.com/rss.xml?type=deviation&q=nude+erotic&order=14&offset="
-rss_filter = "https://backend.deviantart.com/rss.xml?q=boost%3Apopular+max_age%3A72h%FILTER%&type=deviation"
+rss_art = "https://backend.deviantart.com/rss.xml"\
+          "?q=boost%3Apopular+max_age%3A72h+in%3Aphotography&type=deviation"
+rss_nudes = "https://backend.deviantart.com/rss.xml"\
+          "?type=deviation&q=nude+erotic&order=14&offset="
+rss_filter = "https://backend.deviantart.com/rss.xml"\
+          "?q=boost%3Apopular+max_age%3A72h%FILTER%&type=deviation"
 rss_list = [
     "https://naked-science.ru/?yandex_feed=news",
     "https://3dnews.ru/news/rss/",
@@ -44,10 +47,10 @@ def get_drama(cmd, user, chat, message, cmd_args):
         out_msg = "Немного важных драм, {}\n".format(user.first_name)
         r = feedparser.parse(random.choice(drama_list))
         n = random.choice(r["entries"])
-        out_msg += "Вот, например, \"{}\" из категории \"{}\"\n\n{}\n\n{}".format(
-            n["title"], n["category"], n["description"], n["guid"])
+        out_msg += "Вот, например, \"{}\" из категории \"{}\"\n\n{}\n\n{}".\
+            format(n["title"], n["category"], n["description"], n["guid"])
         bot.send_message(chat, out_msg, origin_user=user, disable_preview=True)
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         bot.send_message(
             chat, "Не удалось что-то с драмами...", origin_user=user)
@@ -60,10 +63,12 @@ def get_day(cmd, user, chat, message, cmd_args):
         if not date_match:
             out_string = read_todays_events()
         else:
-            dd = datetime.datetime.utcnow().replace(day=int(date_match.group(1)), month=int(date_match.group(2)))
+            dd = datetime.datetime.utcnow().\
+                replace(day=int(date_match.group(1)),
+                        month=int(date_match.group(2)))
             out_string = read_todays_events(dd)
         bot.send_message(chat, out_string, origin_user=user, parse_mode="HTML")
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         bot.send_message(
             chat, "Не удалось что-то с датами...", origin_user=user)
@@ -90,7 +95,7 @@ def get_news(cmd, user, chat, message, cmd_args):
             out_msg += "---\n{}\n{}\n({}, опубликовано: {})\n".format(
                 title, slink, feed_title, pubdate)
         bot.send_message(chat, out_msg, origin_user=user, disable_preview=True)
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         bot.send_message(
             chat, "Не удалось что-то с новостями...", origin_user=user)
@@ -110,6 +115,7 @@ def art_getter(count=1, url=rss_art):
         res.append((ent["title"], pht, slink, author_link))
     return res
 
+
 def art_getter_adult(count=1, url=rss_nudes, offset_step=60, steps=15):
     all_entries = []
     res = []
@@ -126,6 +132,7 @@ def art_getter_adult(count=1, url=rss_nudes, offset_step=60, steps=15):
         slink = make_short(pht)
         res.append((ent["title"], pht, slink, author_link))
     return res
+
 
 def get_art(cmd, user, chat, message, cmd_args):
     bot = cmd.addon.bot
@@ -145,11 +152,12 @@ def get_art(cmd, user, chat, message, cmd_args):
             return
         payload = {}
         payload["PHOTO"] = {}
-        payload["PHOTO"]["title"] = "{}\n{} (страница: {})".format(res[2], res[0], res[3])
+        payload["PHOTO"]["title"] = "{}\n{} (страница: {})".\
+            format(res[2], res[0], res[3])
         payload["PHOTO"]["file"] = res[1]
         bot.send_message(chat, origin_user=user, payload=payload,
                          disable_preview=True)
-    except Exception as e:
+    except Exception:
         bot.send_message(
             chat, "Не удалось что-то с картинками...", origin_user=user)
         traceback.print_exc()
@@ -158,17 +166,18 @@ def get_art(cmd, user, chat, message, cmd_args):
 def get_nudes(cmd, user, chat, message, cmd_args):
     bot = cmd.addon.bot
     try:
-        res = art_getter_adult(1, rss_nudes, steps = 5)[0]
+        res = art_getter_adult(1, rss_nudes, steps=5)[0]
         if res is None:
             bot.send_message(chat, "Картинок не нашлось", origin_user=user)
             return
         payload = {}
         payload["PHOTO"] = {}
-        payload["PHOTO"]["title"] = "{}\n{} (страница: {})".format(res[2], res[0], res[3])
+        payload["PHOTO"]["title"] = "{}\n{} (страница: {})".\
+            format(res[2], res[0], res[3])
         payload["PHOTO"]["file"] = res[1]
         bot.send_message(chat, origin_user=user, payload=payload,
                          disable_preview=True)
-    except Exception as e:
+    except Exception:
         bot.send_message(
             chat, "Не удалось что-то с картинками...", origin_user=user)
         traceback.print_exc()
@@ -182,7 +191,8 @@ def task_art(task_f, task, task_model):
     for r in res:
         payload = {}
         payload["PHOTO"] = {}
-        payload["PHOTO"]["title"] = "{} (картинка: {}, страница: {})".format(r[0], r[2], r[3])
+        payload["PHOTO"]["title"] = "{} (картинка: {}, страница: {})".\
+            format(r[0], r[2], r[3])
         payload["PHOTO"]["file"] = r[1]
         bot.send_message(chat, payload=payload,
                          disable_preview=True)
@@ -202,13 +212,15 @@ def task_nudes(task_f, task, task_model):
         for r in res:
             payload = {}
             payload["PHOTO"] = {}
-            payload["PHOTO"]["title"] = "{} (картинка: {}, страница: {})".format(r[0], r[2], r[3])
+            payload["PHOTO"]["title"] = "{} (картинка: {}, страница: {})".\
+                format(r[0], r[2], r[3])
             payload["PHOTO"]["file"] = r[1]
             bot.send_message(chat, payload=payload,
-                            disable_preview=True)
-    except:
+                             disable_preview=True)
+    except Exception:
         print("NUDES FETCH ERROR")
-        bot.reset_task(task, new_time=datetime.datetime.utcnow() + datetime.timedelta(minutes=1))
+        bot.reset_task(task, new_time=datetime.datetime.utcnow() +
+                       datetime.timedelta(minutes=1))
     return True
 
 
@@ -252,63 +264,98 @@ def subscribe(cmd, user, chat, message, cmd_args, command_name,
         bot.send_message(chat, "Время подписки изменено",
                          origin_user=user, reply_to=message.message_id)
 
+
 def subscribe_art(cmd, user, chat, message, cmd_args):
-    subscribe(cmd, user, chat, message, cmd_args, "art", "Слуайная картинка с DeviantArt", "RSS")
+    subscribe(cmd, user, chat, message, cmd_args,
+              "art", "Слуайная картинка с DeviantArt", "RSS")
+
 
 def subscribe_nudes(cmd, user, chat, message, cmd_args):
-    subscribe(cmd, user, chat, message, cmd_args, "nudes", "Три картинки ню с DeviantArt", "RSS Nudes")
+    subscribe(cmd, user, chat, message, cmd_args,
+              "nudes", "Три картинки ню с DeviantArt", "RSS Nudes")
+
 
 def subscribe_day(cmd, user, chat, message, cmd_args):
-    subscribe(cmd, user, chat, message, cmd_args, "history_today", "Этот день в истории", "RSS")
+    subscribe(cmd, user, chat, message, cmd_args,
+              "history_today", "Этот день в истории", "RSS")
+
 
 def cmd_drama():
     return BotCommand(
-    "drama", get_drama, help_text="случайная драма про женскую долю")
+        "drama", get_drama, help_text="случайная драма про женскую долю")
+
+
 def cmd_news():
     return BotCommand(
-    "news", get_news, help_text="три случайных новости")
+        "news", get_news, help_text="три случайных новости")
+
+
 def cmd_day():
     return BotCommand(
-    "history_today", get_day, help_text="день в истории")
+        "history_today", get_day, help_text="день в истории")
+
+
 def cmd_art():
     return BotCommand(
-    "art", get_art, help_text="популярная картинка с DeviantArt")
+        "art", get_art, help_text="популярная картинка с DeviantArt")
+
+
 def cmd_nudes():
     return BotCommand(
-    "nudes", get_nudes, help_text="картинка в стиле ню с DeviantArt")
+        "nudes", get_nudes, help_text="картинка в стиле ню с DeviantArt")
+
 
 def cmd_subscribe_art():
     return BotCommand(
-    "subscribe_art", subscribe_art,
-    help_text="подписка на картинку с сайта deviantart каждый день. Время указывается в виде hh:mm в 24-часовом формате по гринвичу. " \
-    "Например, /subscribe_art 7:15 для картинок в 10:15 по Московскому времени. Если подписка уже активна, она будет изменена или отменена "\
-    "(в том случае, если время не указано).")
+        "subscribe_art", subscribe_art,
+        help_text="подписка на картинку с сайта deviantart каждый день."
+        " Время указывается в виде hh:mm в 24-часовом формате по гринвичу. "
+        "Например, /subscribe_art 7:15 для картинок в 10:15 по Московскому"
+        " времени. Если подписка уже активна, она будет изменена или отменена "
+        "(в том случае, если время не указано).")
+
 
 def cmd_subscribe_nudes():
     return BotCommand(
-    "subscribe_nudes", subscribe_nudes,
-    help_text="подписка на три картинки с неодетыми людьми с сайта deviantart каждый день. Время указывается в виде hh:mm в 24-часовом формате по гринвичу. " \
-    "Например, /subscribe_nudes 7:15 для картинок в 10:15 по Московскому времени. Если подписка уже активна, она будет изменена или отменена "\
-    "(в том случае, если время не указано).")
+        "subscribe_nudes", subscribe_nudes,
+        help_text="подписка на три картинки с неодетыми людьми с"
+        " сайта deviantart каждый день. Время указывается в виде"
+        " hh:mm в 24-часовом формате по гринвичу. "
+        "Например, /subscribe_nudes 7:15 для картинок в 10:15 по Московскому"
+        " времени. Если подписка уже активна, она будет изменена или отменена "
+        "(в том случае, если время не указано).")
+
 
 def cmd_subscribe_day():
     return BotCommand(
-    "subscribe_history_today", subscribe_day,
-    help_text="подписка на каждый день в истории по материалам википедии. Время указывается в виде hh:mm в 24-часовом формате по гринвичу. " \
-    "Например, /subscribe_history_today 7:15 для картинок в 10:15 по Московскому времени. Если подписка уже активна, она будет изменена или отменена "\
-    "(в том случае, если время не указано).")
+        "subscribe_history_today", subscribe_day,
+        help_text="подписка на каждый день в истории по материалам википедии."
+        " Время указывается в виде hh:mm в 24-часовом формате по гринвичу. "
+        "Например, /subscribe_history_today 7:15 для картинок в 10:15 по"
+        " Московскому времени. Если подписка уже "
+        "активна, она будет изменена или отменена "
+        "(в том случае, если время не указано).")
 
 
 def tsk_art():
     return BotTask("art", task_art)
+
+
 def tsk_nudes():
     return BotTask("nudes", task_nudes)
+
+
 def tsk_day():
     return BotTask("history_today", task_day)
+
+
 def make_rss_info_addon():
     return BotAddon("RSS", "работа с RSS",
-                     [cmd_news(), cmd_day(), cmd_art(), cmd_drama(), cmd_subscribe_art(),
-                      cmd_subscribe_day()], tasks=[tsk_art(), tsk_day()])
+                    [cmd_news(), cmd_day(), cmd_art(),
+                     cmd_drama(), cmd_subscribe_art(),
+                     cmd_subscribe_day()], tasks=[tsk_art(), tsk_day()])
+
+
 def make_rss_nudes_addon():
     return BotAddon("RSS Nudes", "Голые люди с девиантарта",
-                     [cmd_nudes(), cmd_subscribe_nudes()], tasks=[tsk_nudes()])
+                    [cmd_nudes(), cmd_subscribe_nudes()], tasks=[tsk_nudes()])

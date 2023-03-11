@@ -1,6 +1,5 @@
 import requests
 import json
-import math
 import datetime
 import lxml.html as html
 from .core_addon import BotCommand, BotAddon
@@ -13,7 +12,9 @@ BINANCE_SYMBOLS = [
     ("Dogecoin к USDT", "DOGEUSDT", "USD")
     ]
 
-link_moex = "https://iss.moex.com/iss/statistics/engines/futures/markets/indicativerates/securities"
+link_moex = "https://iss.moex.com/iss/statistics"
+"/engines/futures/markets/indicativerates/securities"
+
 
 def _get_currencies_all():
     r = requests.get("https://www.cbr-xml-daily.ru/daily_json.js")
@@ -139,7 +140,8 @@ def get_usd_eur(cmd, user, chat, message, cmd_args):
 def get_crypto(cmd, user, chat, message, cmd_args):
     bot = cmd.addon.bot
     moex_results = _get_currencies_moex()
-    result_string = "Средние курсы криптовалют на Binance за последние 5 минут:\n\n"
+    result_string = "Средние курсы криптовалют на Binance"
+    " за последние 5 минут:\n\n"
     for cc in BINANCE_SYMBOLS:
         price = requests.get(
             "https://data.binance.com"

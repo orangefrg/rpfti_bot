@@ -181,9 +181,9 @@ class BotCore:
     def keep_context(self, addon, context, msg_id=None, user=None, chat=None):
         context_serialized = json.dumps(context)
         stored_context = self.models["Context"](
-            bot = self.db_bot,
-            addon = addon.name,
-            context = context_serialized
+            bot=self.db_bot,
+            addon=addon.name,
+            context=context_serialized
         )
         if msg_id is not None:
             stored_context.message = msg_id
@@ -208,8 +208,9 @@ class BotCore:
                 params["chat"] = chat
         return self.models["Context"].objects.filter(**params)
     
-    def modify_context(self, addon, context, msg_id=None, user=None, chat=None):
-        #TODO: context modification
+    def modify_context(self, addon, context, msg_id=None,
+                       user=None, chat=None):
+        # TODO: context modification
         pass
 
     def get_context(self, addon, msg_id=None, user=None, chat=None):
@@ -220,13 +221,16 @@ class BotCore:
         return context
 
     def _get_addons_by_context(self, message, user, chat):
-        context = self.models["Context"].objects.filter(message=message.message_id)
+        context = self.models["Context"].\
+            objects.filter(message=message.message_id)
         if context.count() == 0:
-            context = self.models["Context"].objects.filter(message__isnull=True, user=user, chat=chat)
+            context = self.models["Context"].\
+                objects.filter(message__isnull=True, user=user, chat=chat)
             if context.count() == 0:
                 context = self.models["Context"].objects.filter(
                     Q(message__isnull=True),
-                    Q(user=user) & Q(chat__isnull=True) | Q(chat=chat) & Q(user__isnull=True))
+                    Q(user=user) & Q(chat__isnull=True) |
+                    Q(chat=chat) & Q(user__isnull=True))
         if context.count() == 0:
             return []
         all_addons = {}
@@ -238,8 +242,6 @@ class BotCore:
                 all_addons[addons[0]].append(c)
         return all_addons
 
-
-
     def drop_context(self, addon, msg_id=None, user=None, chat=None):
         context = self._retrieve_context(addon.name, msg_id, user, chat)
         context.delete()
@@ -250,7 +252,8 @@ class BotCore:
         if not force and not (self.get_activity(chat.telegram_id) and
                               self.get_activity_global()):
             logging.warning(
-                "Trying to send message to an inactive chat or by inactive bot")
+                "Trying to send message to an"
+                " inactive chat or by inactive bot")
             return
         counter = 0
         print("SENDING FROM {}".format(self.name))
@@ -276,61 +279,67 @@ class BotCore:
                                                  disable_notification=mute)
                     all_sent.append(sent)
                 if "AUDIO" in payload:
-                    sent = self.bot.send_audio(chat.telegram_id,
-                                               payload["AUDIO"]["file"],
-                                               title=payload["AUDIO"]["title"],
-                                               performer=payload[
-                                                   "AUDIO"]["performer"],
-                                               reply_markup=markup,
-                                               reply_to_message_id=reply_to,
-                                               disable_notification=mute)
+                    sent = self.bot.\
+                        send_audio(chat.telegram_id,
+                                   payload["AUDIO"]["file"],
+                                   title=payload["AUDIO"]["title"],
+                                   performer=payload["AUDIO"]["performer"],
+                                   reply_markup=markup,
+                                   reply_to_message_id=reply_to,
+                                   disable_notification=mute)
                     all_sent.append(sent)
                 if "VOICE" in payload:
-                    sent = self.bot.send_voice(chat.telegram_id,
-                                               payload["VOICE"]["file"],
-                                               caption=payload["VOICE"]["title"],
-                                               reply_markup=markup,
-                                               reply_to_message_id=reply_to,
-                                               disable_notification=mute)
+                    sent = self.bot.\
+                        send_voice(chat.telegram_id,
+                                   payload["VOICE"]["file"],
+                                   caption=payload["VOICE"]["title"],
+                                   reply_markup=markup,
+                                   reply_to_message_id=reply_to,
+                                   disable_notification=mute)
                     all_sent.append(sent)
                 if "PHOTO" in payload:
-                    sent = self.bot.send_photo(chat.telegram_id,
-                                               payload["PHOTO"]["file"],
-                                               caption=payload["PHOTO"]["title"],
-                                               reply_markup=markup,
-                                               reply_to_message_id=reply_to,
-                                               disable_notification=mute)
+                    sent = self.bot.\
+                        send_photo(chat.telegram_id,
+                                   payload["PHOTO"]["file"],
+                                   caption=payload["PHOTO"]["title"],
+                                   reply_markup=markup,
+                                   reply_to_message_id=reply_to,
+                                   disable_notification=mute)
                     all_sent.append(sent)
                 if "LOCATION" in payload:
-                    sent = self.bot.send_location(chat.telegram_id, latitude=payload[
-                        "LOCATION"]["lat"],
-                        longitude=payload["LOCATION"]["long"],
-                        reply_markup=markup,
-                        reply_to_message_id=reply_to,
-                        disable_notification=mute)
+                    sent = self.bot.\
+                        send_location(chat.telegram_id,
+                                      latitude=payload["LOCATION"]["lat"],
+                                      longitude=payload["LOCATION"]["long"],
+                                      reply_markup=markup,
+                                      reply_to_message_id=reply_to,
+                                      disable_notification=mute)
                     all_sent.append(sent)
                 if "DOCUMENT" in payload:
-                    sent = self.bot.send_document(chat.telegram_id,
-                                                  payload["DOCUMENT"]["file"],
-                                                  caption=payload["DOCUMENT"]["title"],
-                                                  reply_markup=markup,
-                                                  reply_to_message_id=reply_to,
-                                                  disable_notification=mute)
+                    sent = self.bot.\
+                        send_document(chat.telegram_id,
+                                      payload["DOCUMENT"]["file"],
+                                      caption=payload["DOCUMENT"]["title"],
+                                      reply_markup=markup,
+                                      reply_to_message_id=reply_to,
+                                      disable_notification=mute)
                     all_sent.append(sent)
                 if "VIDEO" in payload:
                     if payload["VIDEO"]["type"] == "note":
-                        sent = self.bot.send_video_note(chat.telegram_id, payload[
-                            "VIDEO"]["file"],
-                            reply_markup=markup,
-                            reply_to_message_id=reply_to,
-                            disable_notification=mute)
+                        sent = self.bot.\
+                            send_video_note(chat.telegram_id,
+                                            payload["VIDEO"]["file"],
+                                            reply_markup=markup,
+                                            reply_to_message_id=reply_to,
+                                            disable_notification=mute)
                     else:
-                        sent = self.bot.send_video(chat.telegram_id,
-                                                   payload["VIDEO"]["file"],
-                                                   caption=payload["VIDEO"]["title"],
-                                                   reply_markup=markup,
-                                                   reply_to_message_id=reply_to,
-                                                   disable_notification=mute)
+                        sent = self.bot.\
+                            send_video(chat.telegram_id,
+                                       payload["VIDEO"]["file"],
+                                       caption=payload["VIDEO"]["title"],
+                                       reply_markup=markup,
+                                       reply_to_message_id=reply_to,
+                                       disable_notification=mute)
                     all_sent.append(sent)
                 if "CONTACT" in payload:
                     sent = self.bot.send_sticker(chat.telegram_id,
@@ -348,7 +357,6 @@ class BotCore:
                 print(e)
                 counter += 1
             return None
-
 
     def get_user(self, user):
         try:
@@ -395,7 +403,6 @@ class BotCore:
         db_chat = self.get_chat(message.chat)
         return db_chat, db_user
 
-
     def trigger_task(self, task, task_model):
         print(task.addon, task.command)
         for a in self.addons:
@@ -411,12 +418,12 @@ class BotCore:
                         return res
         return False
 
-
     def check_tasks(self):
         db_tasks = self.models["Tasks"].objects.filter(bot__name=self.name)
         to_do = []
         for t in db_tasks:
-            if t.trigger_time.replace(tzinfo=None) <= datetime.datetime.utcnow():
+            if t.trigger_time.replace(tzinfo=None) <= \
+              datetime.datetime.utcnow():
                 to_do.append(t)
         for t in to_do:
             if not self.trigger_task(t, self.models["Tasks"]):
@@ -425,18 +432,23 @@ class BotCore:
 
     # Get all tasks of a kind
     def get_task(self, chat, addon_name, command):
-        return self.models["Tasks"].objects.filter(bot__name=self.name, chat=chat, addon=addon_name, command=command)
-
-
+        return self.models["Tasks"].objects.filter(bot__name=self.name,
+                                                   chat=chat,
+                                                   addon=addon_name,
+                                                   command=command)
 
     # Current task is deleted after being triggered
-    # Tasks model and current task are passed to function, so that the latter can reset task
+    # Tasks model and current task are passed to function,
+    # so that the latter can reset task
     # By default, only one task of a kind is allowed for a chat
     # "allow_multiple" argument allows to override this
     # Otherwise, only the time will be modified
-    def add_task(self, trigger_time, db_chat, addon_name, command, description, db_user, args={}, allow_multiple=False, random_reset=False):
+    def add_task(self, trigger_time, db_chat, addon_name, command,
+                 description, db_user, args={},
+                 allow_multiple=False, random_reset=False):
         if not trigger_time:
-            trigger_time = datetime.datetime.utcnow() + datetime.timedelta(seconds=30)
+            trigger_time = datetime.datetime.utcnow() + \
+                datetime.timedelta(seconds=30)
         if not allow_multiple:
             test = self.get_task(db_chat, addon_name, command)
             if test.count() > 0:
@@ -461,25 +473,28 @@ class BotCore:
         task.save()
         return True
 
-
     # Delete tasks
     # Currently, most precise filter is "chat + addon + command",
     # that means all such tasks will be deleted
-    # Addon and command argumets are optional, lack of those will delete all the tasks for current chat
+    # Addon and command argumets are optional,
+    # lack of those will delete all the tasks for current chat
     def delete_task(self, db_chat, addon_name=None, command=None):
         if addon_name is not None:
             if command is not None:
                 self.get_task(db_chat, addon_name, command).delete()
             else:
-                self.models["Tasks"].objects.filter(bot__name=self.name, chat=db_chat, addon=addon_name).delete()
+                self.models["Tasks"].objects.filter(bot__name=self.name,
+                                                    chat=db_chat,
+                                                    addon=addon_name).delete()
         else:
-            self.models["Tasks"].objects.filter(bot__name=self.name, chat=db_chat).delete()
-
+            self.models["Tasks"].objects.filter(bot__name=self.name,
+                                                chat=db_chat).delete()
 
     # Resets task
     # Period or new time can be provided
     # If new time provided, it is being checked
-    # Unless it is later, than current time, it will be set 30 seconds after current time
+    # Unless it is later, than current time,
+    # it will be set 30 seconds after current time
     # If no new time present, delta is added to initial time
     # If none present, delta is considered 24 hours
     def reset_task(self, task, delta=None, new_time=None):
@@ -487,12 +502,16 @@ class BotCore:
             if delta is None:
                 new_time = task.trigger_time + datetime.timedelta(hours=24)
                 if task.random_time:
-                    new_time = new_time.replace(hour=random.randint(0,24), minute=random.randint(0,59))
+                    new_time = new_time.replace(hour=random.randint(0, 24),
+                                                minute=random.randint(0, 59))
             else:
                 new_time = task.trigger_time + delta
         if new_time.replace(tzinfo=None) < datetime.datetime.utcnow():
-            new_time = datetime.datetime.utcnow() + datetime.timedelta(seconds=30)
-        print("Resetting task {} from {} to {}".format(task.command, task.trigger_time, new_time))
+            new_time = datetime.datetime.utcnow() + \
+                datetime.timedelta(seconds=30)
+        print("Resetting task {} from {} to {}".format(task.command,
+                                                       task.trigger_time,
+                                                       new_time))
         task.trigger_time = new_time
         task.counter += 1
         task.save()
@@ -527,12 +546,14 @@ class BotCore:
         @self.bot.message_handler(
                 func=lambda message:
                 message.reply_to_message is not None and
-                message.reply_to_message.from_user.id == self.db_bot.telegram_id,
+                message.reply_to_message.from_user.id == 
+                self.db_bot.telegram_id,
                 content_types=["photo", "text", "location"])
         def process_reply(message):
             print("PROCESSING REPLY")
             db_chat, db_user = self.check_user_and_chat(message)
-            all_addons = self._get_addons_by_context(message.reply_to_message, db_user, db_chat)
+            all_addons = self._get_addons_by_context(message.reply_to_message,
+                                                     db_user, db_chat)
             for a in all_addons:
                 for c in all_addons[a]:
                     a.process_reply(c, db_user, db_chat, message)

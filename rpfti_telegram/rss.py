@@ -221,12 +221,13 @@ def task_day(task_f, task, task_model):
     return True
 
 
-def subscribe(cmd, user, chat, message, cmd_args, command_name, command_description, addon_name):
+def subscribe(cmd, user, chat, message, cmd_args, command_name,
+              command_description, addon_name):
     bot = cmd.addon.bot
     time_match = re.search("(\d+):(\d+)", cmd_args)
     if not time_match:
-        if bot.get_task(chat, "RSS", command_name).count() > 0:
-            bot.delete_task(chat, "RSS", command_name)
+        if bot.get_task(chat, addon_name, command_name).count() > 0:
+            bot.delete_task(chat, addon_name, command_name)
             bot.send_message(chat, "Подписка отменена",
                              origin_user=user, reply_to=message.message_id)
             return
@@ -243,7 +244,8 @@ def subscribe(cmd, user, chat, message, cmd_args, command_name, command_descript
     subs_date = datetime.datetime.utcnow().replace(hour=hours, minute=mins)
     if subs_date < datetime.datetime.utcnow():
         subs_date.replace(day=subs_date.day + 1)
-    if bot.add_task(subs_date, chat, addon_name, command_name, command_description, user):
+    if bot.add_task(subs_date, chat, addon_name, command_name,
+                    command_description, user):
         bot.send_message(chat, "Отлично, подписка настроена",
                          origin_user=user, reply_to=message.message_id)
     else:
@@ -254,7 +256,7 @@ def subscribe_art(cmd, user, chat, message, cmd_args):
     subscribe(cmd, user, chat, message, cmd_args, "art", "Слуайная картинка с DeviantArt", "RSS")
 
 def subscribe_nudes(cmd, user, chat, message, cmd_args):
-    subscribe(cmd, user, chat, message, cmd_args, "nudes", "Три картинки ню с DeviantArt", "RSS")
+    subscribe(cmd, user, chat, message, cmd_args, "nudes", "Три картинки ню с DeviantArt", "RSS Nudes")
 
 def subscribe_day(cmd, user, chat, message, cmd_args):
     subscribe(cmd, user, chat, message, cmd_args, "history_today", "Этот день в истории", "RSS")

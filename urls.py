@@ -1,10 +1,10 @@
-from django.conf.urls import url
+from django.urls import re_path
 from django.contrib import admin
 from rpfti.views import wai, mon, info, amoral
 
 admin.autodiscover()
 
-urlpatterns = [url(r'^wai/$', wai, name='wai'),
-               url(r'^info/$', info, name='info'),
-               url(r'^amoral/$', amoral, name='amoral'),
-               url(r'^mon/$', mon, name='mon')]
+urlpatterns = [re_path(r'^wai/$', wai, name='wai'),
+               re_path(r'^info/$', info, name='info'),
+               re_path(r'^amoral/$', amoral, name='amoral'),
+               re_path(r'^mon/$', mon, name='mon')]

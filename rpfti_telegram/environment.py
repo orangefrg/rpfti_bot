@@ -1,8 +1,5 @@
 import requests
 import rpfti.shared_config
-import json
-import math
-import datetime
 import re
 from .core_addon import BotCommand, BotAddon
 
@@ -119,11 +116,10 @@ def _parse_air(air_response):
     result_string += "\nПогода:\n"
     if weather_type:
         result_string += "{} ".format(weather_type)
-    result_string += "{}°C, влажность {}%, давление {:.1f} мм рт. ст.\n".format(
-                        current_data.get("weather").get("tp"),
-                        current_data.get("weather").get("hu"),
-                        current_data.get("weather").get("pr") * 0.7500637554
-    )
+    result_string += "{}°C, влажность {}%, давление {:.1f} мм рт. ст.\n".\
+        format(current_data.get("weather").get("tp"),
+               current_data.get("weather").get("hu"),
+               current_data.get("weather").get("pr") * 0.7500637554)
     wind_dir = current_data.get("weather").get("wd")
     if wind_dir >= 337.5 or wind_dir <= 22.5:
         direction = "северный"
@@ -142,7 +138,8 @@ def _parse_air(air_response):
     else:
         direction = "северо-западный"
     result_string += "Ветер {}, {} м/с".format(direction,
-                                               current_data.get("weather").get("ws"))
+                                               current_data.
+                                               get("weather").get("ws"))
     return result_string
 
 

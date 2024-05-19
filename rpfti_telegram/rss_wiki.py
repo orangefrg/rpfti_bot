@@ -4,10 +4,12 @@ import lxml.html as html
 import re
 import random
 
-months = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября",
+months = ["января", "февраля", "марта", "апреля", "мая",
+          "июня", "июля", "августа", "сентября", "октября", "ноября",
           "декабря"]
 
 annivs = [1000, 500, 250, 100, 50, 5]
+
 
 def get_events(marker, doc):
     event_tags = []
@@ -68,13 +70,15 @@ def get_events(marker, doc):
             out_strings.append((year, year_str, out_string))
     return out_strings
 
+
 def get_names(doc):
     name_tags = []
     catch_tag = False
     for c in doc.getchildren():
         if not catch_tag and c.tag != "h3" and c.tag != "h2":
             continue
-        elif (c.tag == "h3" or c.tag == "h2") and c.getchildren()[0].text == "Именины":
+        elif (c.tag == "h3" or c.tag == "h2") and\
+                c.getchildren()[0].text == "Именины":
             catch_tag = True
         elif catch_tag:
             if c.tag == "ul":
@@ -107,7 +111,9 @@ def sort_by_anniversaries(array, limit, cur_year, anniv_order=0):
                 array.remove(a)
                 limit -= 1
         if limit > 0 and len(array) > 0:
-            out_elements.extend(sort_by_anniversaries(array, limit, cur_year, anniv_order + 1))
+            out_elements.extend(sort_by_anniversaries(array, limit,
+                                                      cur_year,
+                                                      anniv_order + 1))
     else:
         while limit > 0 and len(array) > 0:
             elem = random.choice(array)
@@ -130,34 +136,44 @@ def diff_to_string(diff):
 
 
 def prepare_string(cur_date, events, born, died, names):
-    out_string = "<b>{} {} в истории</b>\n\n".format(cur_date.day, months[cur_date.month-1])
+    out_string = "<b>{} {} в истории</b>\n\n".format(cur_date.day,
+                                                     months[cur_date.month-1])
     if len(names) > 0:
         out_string += "<b>Именины</b>:\n"
         out_string += names
     if len(born) > 0:
         out_string += "\n<b>В этот день родились:</b>\n"
         for e in born:
-            out_string += "{} ({}){}\n".format(diff_to_string(e[3]), e[1], e[2])
+            out_string += "{} ({}){}\n".format(diff_to_string(e[3]),
+                                               e[1], e[2])
     if len(died) > 0:
         out_string += "<b>И умерли:</b>\n"
         for e in died:
-            out_string += "{} ({}){}\n".format(diff_to_string(e[3]), e[1], e[2])
+            out_string += "{} ({}){}\n".format(diff_to_string(e[3]),
+                                               e[1], e[2])
     if len(events) > 0:
         out_string += "<b>События в истории:</b>\n"
         for e in events:
-            out_string += "{} ({}){}\n".format(diff_to_string(e[3]), e[1], e[2])
+            out_string += "{} ({}){}\n".format(diff_to_string(e[3]),
+                                               e[1], e[2])
     return out_string
-
-
 
 
 def read_todays_events(date=None, limit=5):
     cur = datetime.datetime.utcnow() if date is None else date
-    link = "https://ru.wikipedia.org/wiki/{}_{}".format(cur.day, months[cur.month - 1])
+    link = "https://ru.wikipedia.org/wiki/{}_{}".format(cur.day,
+                                                        months[cur.month - 1])
     r = requests.get(link)
-    doc = html.document_fromstring(r.content.decode("utf-8", "strict")).find_class('mw-parser-output').pop()
+    doc = html.document_fromstring(r.content.decode("utf-8", "strict")).\
+        find_class('mw-parser-output').pop()
     names = get_names(doc)
-    events = sorted(sort_by_anniversaries(get_events("События", doc), limit, cur.year), key = lambda elem: elem[0])
-    born = sorted(sort_by_anniversaries(get_events("Родились", doc), limit, cur.year), key = lambda elem: elem[0])
-    died = sorted(sort_by_anniversaries(get_events("Скончались", doc), limit, cur.year), key = lambda elem: elem[0])
+    events = sorted(sort_by_anniversaries(get_events("События", doc),
+                                          limit, cur.year),
+                    key=lambda elem: elem[0])
+    born = sorted(sort_by_anniversaries(get_events("Родились", doc),
+                                        limit, cur.year),
+                  key=lambda elem: elem[0])
+    died = sorted(sort_by_anniversaries(get_events("Скончались", doc),
+                                        limit, cur.year),
+                  key=lambda elem: elem[0])
     return prepare_string(cur, events, born, died, names)
